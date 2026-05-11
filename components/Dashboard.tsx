@@ -590,6 +590,88 @@ function AlertsView() {
   )
 }
 
+function MarkdownMessage({ content }: { content: string }) {
+  const renderInline = (text: string) =>
+    text.split(/(\*\*[^*]+\*\*)/).map((p, i) =>
+      p.startsWith('**') && p.endsWith('**')
+        ? <strong key={i} style={{fontWeight:700,color:T.navy}}>{p.slice(2,-2)}</strong>
+        : <React.Fragment key={i}>{p}</React.Fragment>
+    )
+
+  const sections: React.ReactNode[] = []
+  let counter = 0
+  const k = () => `md-${counter++}`
+  let tableAcc: string[] = []
+  let listAcc: string[] = []
+
+  const commitTable = () => {
+    if (tableAcc.length < 2) { tableAcc = []; return }
+    const isHR = (l: string) => /^\|[\s\-:|]+\|$/.test(l)
+    const headers = tableAcc[0].split('|').slice(1,-1).map(c=>c.trim()).filter(Boolean)
+    const rows = tableAcc.filter((_,i)=>i>0&&!isHR(tableAcc[i])).map(l=>l.split('|').slice(1,-1).map(c=>c.trim()))
+    if (!headers.length) { tableAcc = []; return }
+    sections.push(
+      <div key={k()} style={{overflowX:'auto',margin:'6px 0 12px'}}>
+        <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+          <thead>
+            <tr>{headers.map((h,i)=><th key={i} style={{background:T.tealLight,color:T.tealDark,padding:'8px 10px',textAlign:'left',fontWeight:700,fontSize:10,textTransform:'uppercase',letterSpacing:'0.04em',borderBottom:`2px solid ${T.teal}`,whiteSpace:'nowrap'}}>{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {rows.map((row,ri)=>(
+              <tr key={ri} style={{background:ri%2===0?T.white:T.bg}}>
+                {row.map((cell,ci)=><td key={ci} style={{padding:'7px 10px',borderBottom:`1px solid ${T.border}`,color:T.text,lineHeight:1.5,verticalAlign:'top'}}>{renderInline(cell)}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+    tableAcc = []
+  }
+
+  const commitList = () => {
+    if (!listAcc.length) return
+    sections.push(
+      <ul key={k()} style={{margin:'4px 0 10px',padding:0,listStyle:'none',display:'flex',flexDirection:'column',gap:5}}>
+        {listAcc.map((item,i)=>(
+          <li key={i} style={{display:'flex',gap:8,fontSize:12,color:T.text,lineHeight:1.5,alignItems:'flex-start'}}>
+            <span style={{color:T.teal,flexShrink:0,fontWeight:700,marginTop:1}}>·</span>
+            <span>{renderInline(item)}</span>
+          </li>
+        ))}
+      </ul>
+    )
+    listAcc = []
+  }
+
+  content.split('\n').forEach(line => {
+    const t = line.trim()
+    if (t.startsWith('## ')) {
+      commitTable(); commitList()
+      sections.push(
+        <div key={k()} style={{display:'flex',alignItems:'center',gap:8,margin:'16px 0 6px',paddingLeft:10,borderLeft:`3px solid ${T.teal}`}}>
+          <span style={{fontSize:11,fontWeight:700,color:T.teal,textTransform:'uppercase',letterSpacing:'0.07em'}}>{t.slice(3)}</span>
+        </div>
+      )
+    } else if (t.startsWith('### ')) {
+      commitTable(); commitList()
+      sections.push(<div key={k()} style={{fontSize:12,fontWeight:700,color:T.navy,margin:'8px 0 4px'}}>{t.slice(4)}</div>)
+    } else if (t.startsWith('|')) {
+      commitList(); tableAcc.push(t)
+    } else if (/^[-*] /.test(t)) {
+      commitTable(); listAcc.push(t.slice(2))
+    } else if (t === '') {
+      commitTable(); commitList()
+    } else {
+      commitTable(); commitList()
+      sections.push(<p key={k()} style={{fontSize:12,color:T.text,lineHeight:1.6,margin:'0 0 6px'}}>{renderInline(t)}</p>)
+    }
+  })
+  commitTable(); commitList()
+
+  return <div style={{minWidth:0}}>{sections}</div>
+}
+
 function AIView() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput]       = useState('')
@@ -599,15 +681,46 @@ function AIView() {
 
 LIVE DATA — Honasa Consumer (Mamaearth, Derma Co, Aqualogica):
 - Overall sell-through ratio: 0.78 (target: 0.80+)
-- Critical distributors: 4 (Sharma Dist. Pune: 78d/0.38, Patel Ent. Ahmedabad: 65d/0.52, Singh & Sons Delhi: 42d/0.61, Reddy Retail Hyderabad: 52d/varied)
-- Avg days of inventory: 34 (target: ≤30)
-- Total distributors: 30 across 8 regions
-- Top performers: Joshi Marketing Mumbai (0.94), Nair Consumer Chennai (0.88)
+- Critical distributors: 4 (Sharma Dist. Pune: 78d/0.38 | Patel Ent. Ahmedabad: 65d/0.52 | Singh & Sons Delhi: 42d/0.61 | Reddy Retail Hyderabad: 52d/varied)
+- Avg days of inventory: 34d (target: ≤30)
+- Total: 30 distributors across 8 regions
+- Top performers: Joshi Marketing Mumbai 0.94 | Nair Consumer Chennai 0.88
 - Worst SKU: Onion Shampoo 600ml (0.70 sell-through, 5.2% return rate)
 - Best SKU: Daily Glow Sunscreen SPF50 (0.95, 1.8% return rate)
-- Trend: Primary sales grew Nov-Mar but secondary lagged — distributor inventory building
+- Trend: Primary sales grew Nov–Mar; secondary lagged — inventory accumulating
 
-Respond in 2-3 short paragraphs. Be specific with names and numbers. No bullet points. Use plain prose. Reference the actual data.`
+OUTPUT FORMAT — Always respond using this exact executive report structure in markdown:
+
+## Executive Summary
+[2–3 bullet points. One decisive finding per bullet. Max 12 words each.]
+
+## Critical Alerts
+| Distributor | Risk | Inventory Days | Sell-Through | Immediate Action |
+| --- | --- | --- | --- | --- |
+[Only include distributors that are Critical or At Risk. Omit if not relevant.]
+
+## Observations
+[Bullet list — factual data points only. What the numbers show. No interpretation.]
+
+## Insights
+[Bullet list — the "so what" behind each observation. Pattern, cause, business implication.]
+
+## Recommendations
+| Priority | Action | Expected Impact | Timeline |
+| --- | --- | --- | --- |
+[P1 = act this week, P2 = act this month, P3 = strategic]
+
+## Strategic Implications
+[1–2 bullets. What this means for the brand at a leadership level.]
+
+STYLE RULES:
+- Use markdown exactly: ## headings, | tables with separator row, - bullets, **bold** for key numbers/names
+- Every table must include the separator row (| --- | --- |) on line 2
+- Be specific — use actual names and numbers from the live data
+- One idea per bullet, max 15 words
+- Consulting language: direct, no filler phrases, no "it is important to note"
+- Omit sections that are not relevant to the specific question asked
+- Never use prose paragraphs — everything must be bullets or tables`
 
   const send = useCallback(async () => {
     if(!input.trim() || loading) return
@@ -665,9 +778,15 @@ Respond in 2-3 short paragraphs. Be specific with names and numbers. No bullet p
           )}
           {messages.map((m, i) => (
             <div key={i} style={{display:'flex',justifyContent:m.role==='user'?'flex-end':'flex-start'}}>
-              <div style={{maxWidth:'78%',padding:'10px 14px',borderRadius:12,fontSize:12,lineHeight:1.65,...(m.role==='user'?{background:T.tealLight,color:T.tealDark,fontWeight:500}:{background:T.bg,color:T.text,border:`1px solid ${T.border}`})}}>
-                {m.content}
-              </div>
+              {m.role==='user' ? (
+                <div style={{maxWidth:'72%',padding:'10px 14px',borderRadius:12,fontSize:12,lineHeight:1.65,background:T.tealLight,color:T.tealDark,fontWeight:500}}>
+                  {m.content}
+                </div>
+              ) : (
+                <div style={{width:'100%',padding:'14px 16px',borderRadius:12,background:T.white,border:`1px solid ${T.border}`,boxShadow:'0 1px 4px rgba(0,0,0,0.05)'}}>
+                  <MarkdownMessage content={m.content}/>
+                </div>
+              )}
             </div>
           ))}
           {loading && (
