@@ -23,6 +23,26 @@ const T = {
   green: '#059669', greenLight: '#D1FAE5', greenText: '#065F46',
 }
 
+// ─── TERM DEFINITIONS ─────────────────────────────────────────
+const DEFS: Record<string, string> = {
+  sellThroughRatio:    'Units sold at retail ÷ units shipped to distributors. 0.80 = 80% of shipped stock has reached consumers. Target: ≥0.80. Below 0.70 signals a crisis requiring immediate action.',
+  criticalDist:        'Distributors with a risk score ≥70. They hold dangerously high inventory (>45 days) with declining sell-through. Immediate action required: pause shipments or deploy a field team.',
+  avgDaysInv:          'Average days of stock held across all distributors, calculated as unsold units ÷ daily sell-through velocity. Target: ≤30 days. The Mamaearth crisis reached 90 days before anyone noticed.',
+  activeDist:          'Total distributors currently receiving shipments and tracked by Multicommerce across all regions.',
+  primarySales:        'Units shipped from the brand warehouse to distributors — what Unicommerce tracks. Not a reliable demand signal on its own: primary sales can grow even as consumer demand falls.',
+  secondarySales:      'Units actually sold by distributors to retailers or end consumers. The real demand signal. A widening gap between primary and secondary means unsold stock is accumulating at distributors.',
+  riskBreakdown:       'Distributors scored 0–100 on sell-through ratio and inventory days. Healthy (<40): on track. At Risk (40–69): monitor closely. Critical (≥70): act immediately.',
+  invDays:             'Days of stock a distributor holds at current sell-through velocity. Target: ≤30 days. >45 days = At Risk. >60 days = Critical and likely to cause distributor relationship damage.',
+  riskScore:           'Composite score 0–100 based on sell-through ratio, inventory days held, and week-over-week trend direction. Drives alert prioritisation and distributor ranking.',
+  returnRate:          'Units returned from retail back up the supply chain as a % of total shipped. Target: <4% for FMCG. High return rate signals poor consumer demand, product issues, or oversupply.',
+  deadStock:           'Inventory at high risk of expiry, write-off, or forced discounting based on sell-through velocity. High = ratio <0.70. Medium = 0.70–0.85. Low = >0.85.',
+  sellThrough:         'Ratio of secondary (retail) sales to primary (shipped) units. The core intelligence metric. 0.94 means 94% of shipped stock has been sold through to end consumers.',
+  appAdoption:         'Distributors who have installed the Multicommerce mobile app and submitted at least one sell-through log. Higher adoption = more complete secondary sales data across the network.',
+  loggedToday:         'Distributors who have submitted their daily sell-through log today. Low numbers early in the day are normal — most distributors log in the evening after closing.',
+  avgCompliance:       'Percentage of active days in the last 30 where a distributor submitted their daily log. Low compliance = stale data = unreliable sell-through ratios for that distributor.',
+  dataLag:             'Average time between a distributor submitting a log on their phone and the data appearing in this dashboard. Includes offline queue time for logs submitted without connectivity.',
+}
+
 // ─── TYPES ────────────────────────────────────────────────────
 interface Distributor {
   id: string; name: string; region: string; city: string;
@@ -197,8 +217,27 @@ function Card({ children, style = {} }: { children: React.ReactNode; style?: Rea
   return <div style={{background:T.white,border:`1px solid ${T.border}`,borderRadius:12,padding:20,...style}}>{children}</div>
 }
 
-function MetricCard({ label, value, sub, color = T.teal, icon: Icon, trend }: {
-  label: string; value: string | number; sub?: string; color?: string; icon: React.ElementType; trend?: string
+function InfoTooltip({ text }: { text: string }) {
+  const [show, setShow] = React.useState(false)
+  return (
+    <span style={{position:'relative',display:'inline-flex',alignItems:'center',flexShrink:0}}>
+      <span
+        onMouseEnter={()=>setShow(true)}
+        onMouseLeave={()=>setShow(false)}
+        style={{width:14,height:14,borderRadius:'50%',background:T.tealLight,border:`1px solid ${T.teal}`,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:800,color:T.teal,cursor:'help',lineHeight:1,userSelect:'none'}}
+      >i</span>
+      {show && (
+        <div style={{position:'absolute',top:'calc(100% + 6px)',left:'50%',transform:'translateX(-50%)',zIndex:300,background:T.navy,color:'#fff',borderRadius:8,padding:'9px 11px',fontSize:11,lineHeight:1.55,width:240,boxShadow:'0 4px 20px rgba(0,0,0,0.25)',fontWeight:400,pointerEvents:'none',whiteSpace:'normal'}}>
+          {text}
+          <div style={{position:'absolute',bottom:'100%',left:'50%',transform:'translateX(-50%)',width:0,height:0,borderLeft:'5px solid transparent',borderRight:'5px solid transparent',borderBottom:`5px solid ${T.navy}`}}/>
+        </div>
+      )}
+    </span>
+  )
+}
+
+function MetricCard({ label, value, sub, color = T.teal, icon: Icon, trend, tooltip }: {
+  label: string; value: string | number; sub?: string; color?: string; icon: React.ElementType; trend?: string; tooltip?: string
 }) {
   return (
     <div style={{background:T.white,border:`1px solid ${T.border}`,borderRadius:12,padding:'16px 20px',flex:1}}>
@@ -206,6 +245,7 @@ function MetricCard({ label, value, sub, color = T.teal, icon: Icon, trend }: {
         <div style={{display:'flex',alignItems:'center',gap:6}}>
           <Icon size={13} style={{color:T.textDim}} />
           <span style={{fontSize:10,fontWeight:600,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.06em'}}>{label}</span>
+          {tooltip && <InfoTooltip text={tooltip}/>}
         </div>
         {trend && trendIcon(trend)}
       </div>
@@ -248,15 +288,18 @@ function OverviewView() {
       </div>
 
       <div style={{display:'flex',gap:14}}>
-        <MetricCard label="Sell-Through Ratio" value={ratio} sub={+ratio>=0.8?'In healthy range':+ratio>=0.65?'Below target':'Needs attention'} color={+ratio>=0.8?T.green:+ratio>=0.65?T.amber:T.red} icon={TrendingUp} />
-        <MetricCard label="Critical Distributors" value={critical} sub={`${atRisk} more at risk`} color={critical>0?T.red:T.green} icon={AlertTriangle} />
-        <MetricCard label="Avg Days Inventory" value={`${avgDays}d`} sub="Target: ≤30 days" color={avgDays<=30?T.green:avgDays<=45?T.amber:T.red} icon={Package} />
-        <MetricCard label="Active Distributors" value={DIST.length} sub={`${DIST.filter(d=>d.trend==='improving').length} improving`} color={T.teal} icon={Users} />
+        <MetricCard label="Sell-Through Ratio" value={ratio} sub={+ratio>=0.8?'In healthy range':+ratio>=0.65?'Below target':'Needs attention'} color={+ratio>=0.8?T.green:+ratio>=0.65?T.amber:T.red} icon={TrendingUp} tooltip={DEFS.sellThroughRatio}/>
+        <MetricCard label="Critical Distributors" value={critical} sub={`${atRisk} more at risk`} color={critical>0?T.red:T.green} icon={AlertTriangle} tooltip={DEFS.criticalDist}/>
+        <MetricCard label="Avg Days Inventory" value={`${avgDays}d`} sub="Target: ≤30 days" color={avgDays<=30?T.green:avgDays<=45?T.amber:T.red} icon={Package} tooltip={DEFS.avgDaysInv}/>
+        <MetricCard label="Active Distributors" value={DIST.length} sub={`${DIST.filter(d=>d.trend==='improving').length} improving`} color={T.teal} icon={Users} tooltip={DEFS.activeDist}/>
       </div>
 
       <div style={{display:'grid',gridTemplateColumns:'1fr 280px',gap:14}}>
         <Card>
-          <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Primary vs Secondary Sales</div>
+          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+            <div style={{fontSize:13,fontWeight:600,color:T.navy}}>Primary vs Secondary Sales</div>
+            <InfoTooltip text={DEFS.primarySales + ' ' + DEFS.secondarySales}/>
+          </div>
           <div style={{fontSize:11,color:T.textLight,marginBottom:16}}>Gap between lines = unsold stock accumulating at distributors</div>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={TREND} margin={{top:4,right:4,left:-20,bottom:0}}>
@@ -283,7 +326,10 @@ function OverviewView() {
         </Card>
 
         <Card style={{display:'flex',flexDirection:'column'}}>
-          <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:4}}>Risk Breakdown</div>
+          <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+            <div style={{fontSize:13,fontWeight:600,color:T.navy}}>Risk Breakdown</div>
+            <InfoTooltip text={DEFS.riskBreakdown}/>
+          </div>
           <ResponsiveContainer width="100%" height={140}>
             <PieChart>
               <Pie data={riskPie} cx="50%" cy="50%" innerRadius={38} outerRadius={58} paddingAngle={3} dataKey="v">
@@ -346,11 +392,11 @@ function DistributorsView() {
         </div>
         <div style={{display:'flex',gap:14}}>
           {[
-            {l:'Sell-Through',    v:d.sellThrough, color:+d.sellThrough>=0.8?T.green:+d.sellThrough>=0.6?T.amber:T.red, icon:TrendingUp,  sub:'Target: ≥0.80'},
-            {l:'Inventory Days',  v:`${d.days}d`,  color:d.days<=30?T.green:T.red,   icon:Package,     sub:'Target: ≤30 days'},
-            {l:'Shipped (Primary)', v:d.primaryUnits.toLocaleString(),   color:T.teal,  icon:ShoppingBag, sub:'Units this month'},
-            {l:'Sold (Secondary)',  v:d.secondaryUnits.toLocaleString(), color:d.sellThrough>=0.8?T.green:T.amber, icon:TrendingUp, sub:`${(d.primaryUnits-d.secondaryUnits).toLocaleString()} unsold`},
-          ].map(m=><MetricCard key={m.l} label={m.l} value={m.v} sub={m.sub} color={m.color} icon={m.icon}/>)}
+            {l:'Sell-Through',    v:d.sellThrough, color:+d.sellThrough>=0.8?T.green:+d.sellThrough>=0.6?T.amber:T.red, icon:TrendingUp,  sub:'Target: ≥0.80',         tt:DEFS.sellThrough},
+            {l:'Inventory Days',  v:`${d.days}d`,  color:d.days<=30?T.green:T.red,   icon:Package,     sub:'Target: ≤30 days',      tt:DEFS.invDays},
+            {l:'Shipped (Primary)', v:d.primaryUnits.toLocaleString(),   color:T.teal,  icon:ShoppingBag, sub:'Units this month',    tt:DEFS.primarySales},
+            {l:'Sold (Secondary)',  v:d.secondaryUnits.toLocaleString(), color:d.sellThrough>=0.8?T.green:T.amber, icon:TrendingUp, sub:`${(d.primaryUnits-d.secondaryUnits).toLocaleString()} unsold`, tt:DEFS.secondarySales},
+          ].map(m=><MetricCard key={m.l} label={m.l} value={m.v} sub={m.sub} color={m.color} icon={m.icon} tooltip={m.tt}/>)}
         </div>
         <Card>
           <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10}}>
@@ -400,8 +446,18 @@ function DistributorsView() {
       </div>
       <Card style={{padding:0,overflow:'hidden'}}>
         <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 0.8fr 0.8fr 0.9fr 0.7fr 60px',gap:0,padding:'10px 20px',background:T.bg,borderBottom:`1px solid ${T.border}`}}>
-          {['Distributor','Region','Sell-Through','Inv. Days','Units','Risk',''].map(h=>(
-            <div key={h} style={{fontSize:10,fontWeight:600,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.05em'}}>{h}</div>
+          {([
+            ['Distributor',  null],
+            ['Region',       null],
+            ['Sell-Through', DEFS.sellThrough],
+            ['Inv. Days',    DEFS.invDays],
+            ['Units',        null],
+            ['Risk',         DEFS.riskScore],
+            ['',             null],
+          ] as [string, string|null][]).map(([h, def])=>(
+            <div key={h} style={{display:'flex',alignItems:'center',gap:4,fontSize:10,fontWeight:600,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.05em'}}>
+              {h}{def && <InfoTooltip text={def}/>}
+            </div>
           ))}
         </div>
         <div style={{maxHeight:480,overflowY:'auto'}}>
@@ -431,7 +487,10 @@ function SKUView() {
         <p style={{fontSize:13,color:T.textLight,margin:'4px 0 0'}}>Product-level sell-through performance across all distributors</p>
       </div>
       <Card>
-        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:4}}>Sell-Through Ratio by Product</div>
+        <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+          <div style={{fontSize:13,fontWeight:600,color:T.navy}}>Sell-Through Ratio by Product</div>
+          <InfoTooltip text={DEFS.sellThrough}/>
+        </div>
         <div style={{fontSize:11,color:T.textLight,marginBottom:16}}>Products sorted by worst-to-best sell-through — red bars need attention</div>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={sorted.map(s=>({name:s.name.substring(0,20),ratio:+(s.secondary/s.monthly).toFixed(2)}))} layout="vertical" margin={{left:140,right:24,top:0,bottom:0}}>
@@ -447,8 +506,18 @@ function SKUView() {
       </Card>
       <Card style={{padding:0,overflow:'hidden'}}>
         <div style={{display:'grid',gridTemplateColumns:'2.2fr 1fr 0.8fr 0.9fr 0.9fr 0.8fr 80px',gap:0,padding:'10px 20px',background:T.bg,borderBottom:`1px solid ${T.border}`}}>
-          {['Product','Category','MRP','Sell-Through','Return Rate','Dead Stock',''].map(h=>(
-            <div key={h} style={{fontSize:10,fontWeight:600,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.05em'}}>{h}</div>
+          {([
+            ['Product',      null],
+            ['Category',     null],
+            ['MRP',          null],
+            ['Sell-Through', DEFS.sellThrough],
+            ['Return Rate',  DEFS.returnRate],
+            ['Dead Stock',   DEFS.deadStock],
+            ['',             null],
+          ] as [string, string|null][]).map(([h, def])=>(
+            <div key={h} style={{display:'flex',alignItems:'center',gap:4,fontSize:10,fontWeight:600,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.05em'}}>
+              {h}{def && <InfoTooltip text={def}/>}
+            </div>
           ))}
         </div>
         {sorted.map(s=>{
@@ -660,10 +729,10 @@ function MobileAppView() {
 
       {/* KPI row */}
       <div style={{display:'flex',gap:14}}>
-        <MetricCard label="App Adoption" value={`${active+inactive}/30`} sub={`${notInstalled} distributors not yet onboarded`} color={(active+inactive)>=25?T.green:T.amber} icon={Smartphone}/>
-        <MetricCard label="Logged Today" value={loggedToday} sub={`of ${active} active distributors`} color={loggedToday>=15?T.green:T.amber} icon={CheckCircle}/>
-        <MetricCard label="Avg Compliance" value={`${avgCompliance}%`} sub="logs submitted in last 30 days" color={avgCompliance>=80?T.green:avgCompliance>=60?T.amber:T.red} icon={TrendingUp}/>
-        <MetricCard label="Data Lag" value="< 4h" sub="avg time from log to dashboard" color={T.teal} icon={Clock}/>
+        <MetricCard label="App Adoption" value={`${active+inactive}/30`} sub={`${notInstalled} distributors not yet onboarded`} color={(active+inactive)>=25?T.green:T.amber} icon={Smartphone} tooltip={DEFS.appAdoption}/>
+        <MetricCard label="Logged Today" value={loggedToday} sub={`of ${active} active distributors`} color={loggedToday>=15?T.green:T.amber} icon={CheckCircle} tooltip={DEFS.loggedToday}/>
+        <MetricCard label="Avg Compliance" value={`${avgCompliance}%`} sub="logs submitted in last 30 days" color={avgCompliance>=80?T.green:avgCompliance>=60?T.amber:T.red} icon={TrendingUp} tooltip={DEFS.avgCompliance}/>
+        <MetricCard label="Data Lag" value="< 4h" sub="avg time from log to dashboard" color={T.teal} icon={Clock} tooltip={DEFS.dataLag}/>
       </div>
 
       {/* SECTION 1: JOURNEY MAP */}
