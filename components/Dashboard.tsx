@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
+import Link from 'next/link'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell,
@@ -9,6 +10,7 @@ import {
   AlertTriangle, TrendingUp, Package, Users, ShoppingBag, Brain,
   Settings, LayoutDashboard, Bell, ChevronRight, Search, Send, Loader2,
   ArrowUpRight, ArrowDownRight, Minus, Zap, ChevronLeft,
+  Smartphone, CheckCircle, Clock, MessageCircle, Download,
 } from 'lucide-react'
 
 // ─── BRAND TOKENS ─────────────────────────────────────────────
@@ -36,6 +38,11 @@ interface AlertItem {
   sku: string; msg: string; rec: string; ts: string;
 }
 interface Message { role: 'user' | 'assistant'; content: string }
+interface AppStatus {
+  id: string; name: string; region: string; city: string;
+  appStatus: 'active' | 'inactive' | 'not_installed';
+  compliance: number; lastLog: string; logsThisWeek: number; daysAgo: number;
+}
 
 // ─── DATA ─────────────────────────────────────────────────────
 const SKUS: SKUItem[] = [
@@ -104,6 +111,20 @@ function mkDistributors(): Distributor[] {
 }
 
 const DIST = mkDistributors()
+
+const APP_STATUS: AppStatus[] = DIST.map((d, i) => {
+  const rng = seededRng(i * 11 + 99)
+  const appStatus: AppStatus['appStatus'] = i < 3 ? 'not_installed' : i < 7 ? 'inactive' : 'active'
+  const compliance = appStatus === 'active' ? Math.floor(62 + rng() * 35) :
+                     appStatus === 'inactive' ? Math.floor(8 + rng() * 22) : 0
+  const daysAgo = appStatus === 'active' ? Math.floor(rng() * 2) :
+                  appStatus === 'inactive' ? Math.floor(3 + rng() * 11) : 999
+  const lastLog = daysAgo === 0 ? 'Today' : daysAgo === 1 ? 'Yesterday' : daysAgo >= 999 ? 'Never' : `${daysAgo}d ago`
+  const logsThisWeek = appStatus === 'active' ? Math.floor(3 + rng() * 4) :
+                       appStatus === 'inactive' ? Math.floor(rng() * 2) : 0
+  return { id: d.id, name: d.name, region: d.region, city: d.city,
+           appStatus, compliance, lastLog, logsThisWeek, daysAgo }
+})
 
 const ALERTS: AlertItem[] = [
   { id:1, sev:'critical', dist:'Sharma Distribution Co', region:'Maharashtra', metric:'78 days', sku:'Onion Shampoo 600ml', msg:'Inventory at 2.6× safe threshold. Sell-through ratio 0.38. Immediate action required.', rec:'Pause next shipment. Deploy field rep to Pune territory. Consider 15% trade discount.', ts:'2 hrs ago' },
@@ -595,6 +616,334 @@ Respond in 2-3 short paragraphs. Be specific with names and numbers. No bullet p
   )
 }
 
+function MobileAppView() {
+  const [phoneTab, setPhoneTab] = useState<'log' | 'analytics'>('log')
+
+  const active       = APP_STATUS.filter(d => d.appStatus === 'active').length
+  const inactive     = APP_STATUS.filter(d => d.appStatus === 'inactive').length
+  const notInstalled = APP_STATUS.filter(d => d.appStatus === 'not_installed').length
+  const loggedToday  = APP_STATUS.filter(d => d.lastLog === 'Today').length
+  const avgCompliance = Math.round(
+    APP_STATUS.filter(d => d.appStatus === 'active').reduce((s, d) => s + d.compliance, 0) / active
+  )
+
+  const statusColor = (s: string) => s==='active'?T.green:s==='inactive'?T.amber:T.red
+  const statusBg    = (s: string) => s==='active'?T.greenLight:s==='inactive'?T.amberLight:T.redLight
+  const statusLabel = (s: string) => s==='active'?'Active':s==='inactive'?'Inactive':'Not Installed'
+
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:20}}>
+      <div>
+        <h1 style={{fontSize:20,fontWeight:700,color:T.navy,fontFamily:'Georgia,serif',margin:0}}>Distributor Mobile App</h1>
+        <p style={{fontSize:13,color:T.textLight,margin:'4px 0 0'}}>The data collection layer that powers sell-through intelligence — what feeds the engine</p>
+      </div>
+
+      {/* KPI row */}
+      <div style={{display:'flex',gap:14}}>
+        <MetricCard label="App Adoption" value={`${active+inactive}/30`} sub={`${notInstalled} distributors not yet onboarded`} color={(active+inactive)>=25?T.green:T.amber} icon={Smartphone}/>
+        <MetricCard label="Logged Today" value={loggedToday} sub={`of ${active} active distributors`} color={loggedToday>=15?T.green:T.amber} icon={CheckCircle}/>
+        <MetricCard label="Avg Compliance" value={`${avgCompliance}%`} sub="logs submitted in last 30 days" color={avgCompliance>=80?T.green:avgCompliance>=60?T.amber:T.red} icon={TrendingUp}/>
+        <MetricCard label="Data Lag" value="< 4h" sub="avg time from log to dashboard" color={T.teal} icon={Clock}/>
+      </div>
+
+      {/* Architecture diagram */}
+      <Card>
+        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Data Pipeline — How Sell-Through Intelligence Is Built</div>
+        <div style={{fontSize:11,color:T.textLight,marginBottom:20}}>Two independent sources are cross-referenced to produce tamper-resistant sell-through ratios</div>
+
+        {/* Layer 1: Sources */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:6}}>
+          <div style={{background:T.tealLight,border:`1.5px solid ${T.teal}`,borderRadius:12,padding:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+              <div style={{width:28,height:28,background:T.teal,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <Settings size={13} style={{color:'#fff'}}/>
+              </div>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:T.tealDark}}>Unicommerce APIs</div>
+                <div style={{fontSize:9,fontWeight:700,color:T.teal,textTransform:'uppercase',letterSpacing:'0.06em'}}>Primary Data Layer</div>
+              </div>
+            </div>
+            {['Shipments & order data','Inventory snapshots','Returns & RTO data','Product catalogue'].map(item=>(
+              <div key={item} style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:T.text,marginBottom:4}}>
+                <span style={{width:4,height:4,borderRadius:'50%',background:T.teal,flexShrink:0,display:'inline-block'}}/>
+                {item}
+              </div>
+            ))}
+            <div style={{marginTop:10,padding:'5px 8px',background:'rgba(8,145,178,0.12)',borderRadius:6,fontSize:10,color:T.tealDark,fontWeight:600,display:'flex',alignItems:'center',gap:5}}>
+              <span style={{width:6,height:6,borderRadius:'50%',background:T.green,display:'inline-block'}}/>
+              Auto-sync every 6 hours · Connected
+            </div>
+          </div>
+
+          <div style={{background:T.amberLight,border:`1.5px solid ${T.amber}`,borderRadius:12,padding:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+              <div style={{width:28,height:28,background:T.amber,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                <Smartphone size={13} style={{color:'#fff'}}/>
+              </div>
+              <div>
+                <div style={{fontSize:12,fontWeight:700,color:T.amberText}}>Distributor Mobile App</div>
+                <div style={{fontSize:9,fontWeight:700,color:T.amber,textTransform:'uppercase',letterSpacing:'0.06em'}}>Secondary Data Layer</div>
+              </div>
+            </div>
+            {['Daily sell-through quantities','Retailer name & city','SKU-level sales logs','Offline-first sync capable'].map(item=>(
+              <div key={item} style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:T.text,marginBottom:4}}>
+                <span style={{width:4,height:4,borderRadius:'50%',background:T.amber,flexShrink:0,display:'inline-block'}}/>
+                {item}
+              </div>
+            ))}
+            <div style={{marginTop:10,padding:'5px 8px',background:'rgba(217,119,6,0.12)',borderRadius:6,fontSize:10,color:T.amberText,fontWeight:600,display:'flex',alignItems:'center',gap:5}}>
+              <span style={{width:6,height:6,borderRadius:'50%',background:T.amber,display:'inline-block'}}/>
+              Manual daily log · {active+inactive}/30 distributors onboarded
+            </div>
+          </div>
+        </div>
+
+        {/* Arrow down */}
+        <div style={{display:'flex',justifyContent:'center',flexDirection:'column',alignItems:'center',height:28,gap:0}}>
+          <div style={{width:2,height:16,background:T.border}}/>
+          <div style={{fontSize:16,color:T.textDim,lineHeight:1}}>↓</div>
+        </div>
+
+        {/* Layer 2: Engine */}
+        <div style={{background:T.navy,borderRadius:12,padding:'16px 20px',marginBottom:6}}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:2}}>Multicommerce Intelligence Engine</div>
+              <div style={{fontSize:10,color:T.textDim}}>Cross-references both sources · flags anomalies · computes ratios · generates AI alerts</div>
+            </div>
+            <div style={{padding:'3px 10px',background:'rgba(8,145,178,0.3)',borderRadius:20,fontSize:10,fontWeight:600,color:T.teal,flexShrink:0}}>Core</div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8}}>
+            {[
+              {icon:'🔍',label:'Anomaly Validator',    desc:'Catches data gaming by cross-referencing primary vs secondary'},
+              {icon:'📊',label:'Sell-Through Calc',    desc:'Primary ÷ Secondary per distributor, SKU, and territory'},
+              {icon:'🤖',label:'AI Alert Generator',   desc:'Triggers specific actions when thresholds are crossed'},
+              {icon:'🔮',label:'Demand Forecaster',    desc:'Predicts sell-through trajectory from 6-month history'},
+            ].map(item=>(
+              <div key={item.label} style={{background:'rgba(255,255,255,0.05)',borderRadius:8,padding:'10px 12px'}}>
+                <div style={{fontSize:16,marginBottom:4}}>{item.icon}</div>
+                <div style={{fontSize:10,fontWeight:700,color:'#fff',marginBottom:3}}>{item.label}</div>
+                <div style={{fontSize:9,color:T.textDim,lineHeight:1.4}}>{item.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Arrow down */}
+        <div style={{display:'flex',justifyContent:'center',flexDirection:'column',alignItems:'center',height:28}}>
+          <div style={{width:2,height:16,background:T.border}}/>
+          <div style={{fontSize:16,color:T.textDim,lineHeight:1}}>↓</div>
+        </div>
+
+        {/* Layer 3: Outputs */}
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+          {[
+            {icon:'🖥️',label:'Brand Dashboard',        desc:'This platform — all 6 views live today',           tag:'Live',     tagColor:T.green},
+            {icon:'📲',label:'WhatsApp & Email Alerts', desc:'Push critical alerts outside the dashboard',       tag:'Planned',  tagColor:T.amber},
+            {icon:'🔗',label:'API & Webhooks',           desc:"Connect brand's internal BI and ERP tools",       tag:'Roadmap',  tagColor:T.textDim},
+          ].map(item=>(
+            <div key={item.label} style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:10,padding:'12px 14px'}}>
+              <div style={{fontSize:20,marginBottom:6}}>{item.icon}</div>
+              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
+                <div style={{fontSize:11,fontWeight:700,color:T.navy}}>{item.label}</div>
+                <span style={{fontSize:9,fontWeight:700,color:item.tagColor,padding:'1px 6px',borderRadius:99,background:item.tagColor+'22'}}>{item.tag}</span>
+              </div>
+              <div style={{fontSize:10,color:T.textLight,lineHeight:1.4}}>{item.desc}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Adoption table + phone mockup */}
+      <div style={{display:'grid',gridTemplateColumns:'1fr 220px',gap:14,alignItems:'start'}}>
+
+        {/* Adoption table */}
+        <Card style={{padding:0,overflow:'hidden'}}>
+          <div style={{padding:'14px 20px 10px',borderBottom:`1px solid ${T.border}`}}>
+            <div style={{fontSize:13,fontWeight:600,color:T.navy}}>App Adoption by Distributor</div>
+            <div style={{fontSize:11,color:T.textLight,marginTop:2}}>
+              <span style={{color:T.green,fontWeight:600}}>{active} active</span>
+              {' · '}
+              <span style={{color:T.amber,fontWeight:600}}>{inactive} inactive</span>
+              {' · '}
+              <span style={{color:T.red,fontWeight:600}}>{notInstalled} not installed</span>
+            </div>
+          </div>
+          <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 0.6fr 90px',padding:'8px 20px',background:T.bg,borderBottom:`1px solid ${T.border}`}}>
+            {['Distributor','Status','Last Log','Logs/7d','Compliance'].map(h=>(
+              <div key={h} style={{fontSize:10,fontWeight:600,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.05em'}}>{h}</div>
+            ))}
+          </div>
+          <div style={{maxHeight:380,overflowY:'auto'}}>
+            {APP_STATUS.map(d=>(
+              <div key={d.id} style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 0.6fr 90px',padding:'10px 20px',borderBottom:`1px solid ${T.border}`,alignItems:'center'}}>
+                <div>
+                  <div style={{fontSize:12,fontWeight:500,color:T.navy}}>{d.name}</div>
+                  <div style={{fontSize:10,color:T.textDim}}>{d.city}</div>
+                </div>
+                <div>
+                  <span style={{fontSize:10,fontWeight:600,padding:'2px 7px',borderRadius:99,background:statusBg(d.appStatus),color:statusColor(d.appStatus)}}>{statusLabel(d.appStatus)}</span>
+                </div>
+                <div style={{fontSize:11,color:d.appStatus==='not_installed'?T.textDim:d.lastLog==='Today'?T.green:T.text}}>{d.lastLog}</div>
+                <div style={{fontSize:12,fontWeight:600,color:T.navy,textAlign:'center'}}>{d.logsThisWeek}</div>
+                <div style={{display:'flex',alignItems:'center',gap:5}}>
+                  <div style={{flex:1,height:4,background:T.border,borderRadius:2}}>
+                    <div style={{height:4,width:`${d.compliance}%`,background:d.compliance>=80?T.green:d.compliance>=50?T.amber:T.red,borderRadius:2}}/>
+                  </div>
+                  <span style={{fontSize:10,color:T.textDim,minWidth:24,textAlign:'right'}}>{d.compliance}%</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Phone mockup */}
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+          <div style={{fontSize:10,fontWeight:700,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.08em'}}>Distributor View</div>
+          <div style={{
+            width:180,background:'#fff',borderRadius:28,
+            border:'8px solid #1E293B',overflow:'hidden',
+            boxShadow:'0 20px 48px rgba(0,0,0,0.18)',
+          }}>
+            {/* Status bar */}
+            <div style={{height:24,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 12px'}}>
+              <span style={{color:'#fff',fontSize:8,fontWeight:600}}>9:41</span>
+              <div style={{width:32,height:5,background:'#374151',borderRadius:3}}/>
+              <span style={{color:'#94A3B8',fontSize:8}}>●●●</span>
+            </div>
+            {/* App header */}
+            <div style={{background:T.teal,padding:'8px 12px'}}>
+              <div style={{fontSize:7,color:'rgba(255,255,255,0.65)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:1}}>multicommerce</div>
+              <div style={{fontSize:11,fontWeight:700,color:'#fff'}}>Joshi Marketing Agency</div>
+              <div style={{fontSize:8,color:'rgba(255,255,255,0.75)'}}>Mumbai, Maharashtra</div>
+            </div>
+            {/* Tabs */}
+            <div style={{display:'flex',borderBottom:`1px solid ${T.border}`,background:T.white}}>
+              {(['log','analytics'] as const).map(tab=>(
+                <button key={tab} onClick={()=>setPhoneTab(tab)} style={{
+                  flex:1,padding:'5px 0',fontSize:8,fontWeight:phoneTab===tab?700:400,
+                  color:phoneTab===tab?T.teal:T.textLight,border:'none',background:'transparent',
+                  cursor:'pointer',borderBottom:`2px solid ${phoneTab===tab?T.teal:'transparent'}`,
+                  transition:'all 0.15s',
+                }}>
+                  {tab==='log'?'Log Today':'My Analytics'}
+                </button>
+              ))}
+            </div>
+            {/* Content */}
+            {phoneTab==='log' ? (
+              <div style={{padding:'10px 12px',display:'flex',flexDirection:'column',gap:7,background:T.white}}>
+                <div style={{fontSize:7,fontWeight:700,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.07em'}}>Today&apos;s Sell-Through Log</div>
+                <div>
+                  <div style={{fontSize:7,color:T.textDim,marginBottom:2}}>SKU</div>
+                  <div style={{padding:'4px 8px',border:`1px solid ${T.border}`,borderRadius:4,fontSize:8,color:T.navy,background:T.bg}}>Daily Glow Sunscreen SPF50</div>
+                </div>
+                <div>
+                  <div style={{fontSize:7,color:T.textDim,marginBottom:2}}>Units Sold Today</div>
+                  <div style={{padding:'4px 8px',border:`1.5px solid ${T.teal}`,borderRadius:4,fontSize:10,color:T.navy,background:'#fff',fontWeight:700}}>148</div>
+                </div>
+                <div>
+                  <div style={{fontSize:7,color:T.textDim,marginBottom:2}}>Retailer / City</div>
+                  <div style={{padding:'4px 8px',border:`1px solid ${T.border}`,borderRadius:4,fontSize:8,color:T.navy,background:T.bg}}>D-Mart, Malad West</div>
+                </div>
+                <button style={{width:'100%',padding:'7px',background:T.teal,color:'#fff',border:'none',borderRadius:5,fontSize:9,fontWeight:700,cursor:'pointer',marginTop:2}}>Submit Log</button>
+                <div style={{fontSize:7,color:T.textDim,textAlign:'center',lineHeight:1.4}}>Helps Honasa optimize shipments to your territory</div>
+              </div>
+            ) : (
+              <div style={{padding:'10px 12px',display:'flex',flexDirection:'column',gap:7,background:T.white}}>
+                <div style={{fontSize:7,fontWeight:700,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.07em'}}>Your Performance</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5}}>
+                  <div style={{background:T.greenLight,borderRadius:6,padding:'7px',textAlign:'center'}}>
+                    <div style={{fontSize:16,fontWeight:700,color:T.green,fontFamily:'Georgia,serif'}}>0.94</div>
+                    <div style={{fontSize:7,color:T.greenText,marginTop:1}}>Sell-Through</div>
+                  </div>
+                  <div style={{background:T.tealLight,borderRadius:6,padding:'7px',textAlign:'center'}}>
+                    <div style={{fontSize:16,fontWeight:700,color:T.teal,fontFamily:'Georgia,serif'}}>12d</div>
+                    <div style={{fontSize:7,color:T.tealDark,marginTop:1}}>Inventory</div>
+                  </div>
+                </div>
+                <div style={{background:T.greenLight,borderRadius:6,padding:'7px'}}>
+                  <div style={{fontSize:8,fontWeight:700,color:T.greenText,marginBottom:2}}>🏆 Top Performer</div>
+                  <div style={{fontSize:7,color:T.greenText,lineHeight:1.4}}>Best sell-through in Maharashtra. Prioritized for SPF60 launch allocation.</div>
+                </div>
+                {[['Daily Glow SPF50',92],['Vitamin C Serum',88],['Rice Water',81]].map(([name,pct])=>(
+                  <div key={name}>
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:7,color:T.text,marginBottom:1}}>
+                      <span>{name}</span><span style={{fontWeight:600}}>{pct}%</span>
+                    </div>
+                    <div style={{height:3,background:T.border,borderRadius:2}}>
+                      <div style={{height:3,width:`${pct}%`,background:T.teal,borderRadius:2}}/>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{fontSize:10,color:T.textDim,textAlign:'center',maxWidth:180,lineHeight:1.5}}>
+            Distributors unlock their own analytics by submitting daily logs — this is the adoption incentive
+          </div>
+        </div>
+      </div>
+
+      {/* Onboarding panel */}
+      <Card>
+        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Distributor Onboarding</div>
+        <div style={{fontSize:11,color:T.textLight,marginBottom:16}}>Get a distributor live in 3 steps — average time to first log: 3 days after invite</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:14}}>
+
+          <div style={{background:T.bg,borderRadius:10,padding:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+              <div style={{width:24,height:24,borderRadius:'50%',background:T.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}}>1</div>
+              <div style={{fontSize:12,fontWeight:700,color:T.navy}}>Send Invite</div>
+            </div>
+            <div style={{fontSize:11,color:T.textLight,lineHeight:1.6,marginBottom:10}}>Each distributor gets a unique QR code or WhatsApp link. Pre-authenticated — no separate login needed.</div>
+            <div style={{display:'flex',gap:6}}>
+              <button style={{flex:1,padding:'5px 0',background:T.navy,color:'#fff',border:'none',borderRadius:6,fontSize:10,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                <Download size={10}/> QR Code
+              </button>
+              <button style={{flex:1,padding:'5px 0',background:'#25D366',color:'#fff',border:'none',borderRadius:6,fontSize:10,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
+                <MessageCircle size={10}/> WhatsApp
+              </button>
+            </div>
+          </div>
+
+          <div style={{background:T.bg,borderRadius:10,padding:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+              <div style={{width:24,height:24,borderRadius:'50%',background:T.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}}>2</div>
+              <div style={{fontSize:12,fontWeight:700,color:T.navy}}>First Log</div>
+            </div>
+            <div style={{fontSize:11,color:T.textLight,lineHeight:1.6,marginBottom:10}}>Distributor submits their first sell-through entry. 3 fields, under 60 seconds. They immediately unlock their own analytics dashboard.</div>
+            <div style={{padding:'6px 10px',background:T.tealLight,borderRadius:6,fontSize:10,color:T.tealDark,fontWeight:600,display:'flex',alignItems:'center',gap:5}}>
+              <CheckCircle size={11} style={{color:T.teal,flexShrink:0}}/>
+              Works offline — syncs when connected
+            </div>
+          </div>
+
+          <div style={{background:T.bg,borderRadius:10,padding:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+              <div style={{width:24,height:24,borderRadius:'50%',background:T.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}}>3</div>
+              <div style={{fontSize:12,fontWeight:700,color:T.navy}}>Daily Compliance</div>
+            </div>
+            <div style={{fontSize:11,color:T.textLight,lineHeight:1.6,marginBottom:10}}>Automated reminders for distributors who haven&apos;t logged in 2+ days. Brands can pause POs for persistently non-compliant distributors.</div>
+            <div style={{display:'flex',flexDirection:'column',gap:4}}>
+              {APP_STATUS.filter(d=>d.appStatus==='active'&&d.daysAgo>1).slice(0,2).map(d=>(
+                <div key={d.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 8px',background:T.amberLight,borderRadius:5}}>
+                  <span style={{fontSize:10,color:T.amberText,fontWeight:500}}>{d.name.split(' ').slice(0,2).join(' ')}</span>
+                  <span style={{fontSize:9,color:T.amber,fontWeight:600}}>{d.lastLog}</span>
+                </div>
+              ))}
+              <button style={{width:'100%',padding:'5px',background:T.amber,color:'#fff',border:'none',borderRadius:5,fontSize:10,fontWeight:700,cursor:'pointer',marginTop:2,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
+                <MessageCircle size={11}/> Nudge All Inactive
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 function IntegrationsView() {
   const integrations = [
     {name:'Unicommerce (Uniware)',     desc:'Order management, inventory sync, returns data',      status:'connected', eps:['GET /orders','GET /inventory-snapshot','GET /return','GET /products']},
@@ -637,12 +986,13 @@ export default function Dashboard() {
   const criticalCount         = ALERTS.filter(a=>a.sev==='critical').length
 
   const nav = [
-    {id:'dashboard',    label:'Overview',      icon:LayoutDashboard},
-    {id:'distributors', label:'Distributors',  icon:Users},
+    {id:'dashboard',    label:'Overview',         icon:LayoutDashboard},
+    {id:'distributors', label:'Distributors',     icon:Users},
     {id:'skus',         label:'SKU Intelligence', icon:ShoppingBag},
-    {id:'alerts',       label:'Alerts',        icon:Bell, badge:criticalCount},
-    {id:'ai',           label:'AI Insights',   icon:Brain},
-    {id:'integrations', label:'Integrations',  icon:Settings},
+    {id:'alerts',       label:'Alerts',           icon:Bell, badge:criticalCount},
+    {id:'ai',           label:'AI Insights',      icon:Brain},
+    {id:'mobileapp',    label:'Mobile App',       icon:Smartphone},
+    {id:'integrations', label:'Integrations',     icon:Settings},
   ]
 
   return (
@@ -650,6 +1000,9 @@ export default function Dashboard() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} *{box-sizing:border-box;}`}</style>
 
       <div style={{width:220,flexShrink:0,background:T.white,borderRight:`1px solid ${T.border}`,display:'flex',flexDirection:'column',overflowY:'auto'}}>
+        <Link href="/" style={{display:'flex',alignItems:'center',gap:5,padding:'12px 20px 0',fontSize:11,fontWeight:600,color:T.textDim,textDecoration:'none',letterSpacing:'0.01em'}}>
+          ← Back to Pitch
+        </Link>
         <Logo/>
         <div style={{padding:'0 10px 8px'}}>
           <div style={{fontSize:10,color:T.textDim,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.06em',padding:'4px 4px 6px'}}>Platform</div>
@@ -675,6 +1028,7 @@ export default function Dashboard() {
           {view==='skus'         && <SKUView/>}
           {view==='alerts'       && <AlertsView/>}
           {view==='ai'           && <AIView/>}
+          {view==='mobileapp'    && <MobileAppView/>}
           {view==='integrations' && <IntegrationsView/>}
         </div>
       </div>

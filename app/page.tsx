@@ -296,7 +296,7 @@ export default function PitchPage() {
           <div className="nav-logo-mark">m</div>
           <span className="nav-logo-text">multicommerce</span>
         </a>
-        <a className="nav-cta" href="#prototype">See Live Prototype <span>→</span></a>
+        <Link href="/prototype" className="nav-cta">See Live Prototype <span>→</span></Link>
       </nav>
 
       {/* HERO */}
