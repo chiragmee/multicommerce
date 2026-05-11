@@ -556,10 +556,14 @@ Respond in 2-3 short paragraphs. Be specific with names and numbers. No bullet p
         }),
       })
       const d = await r.json()
-      const txt = d.content?.filter((b: {type:string;text:string}) => b.type==='text').map((b: {type:string;text:string}) => b.text).join('\n') || 'Unable to generate insight.'
-      setMessages(p => [...p, { role: 'assistant', content: txt }])
-    } catch {
-      setMessages(p => [...p, { role: 'assistant', content: 'Connect to the Multicommerce backend to activate live AI analysis.' }])
+      if (!r.ok) {
+        setMessages(p => [...p, { role: 'assistant', content: `API error: ${d.error ?? r.status}` }])
+      } else {
+        const txt = d.content?.filter((b: {type:string;text:string}) => b.type==='text').map((b: {type:string;text:string}) => b.text).join('\n') || 'Unable to generate insight.'
+        setMessages(p => [...p, { role: 'assistant', content: txt }])
+      }
+    } catch (err) {
+      setMessages(p => [...p, { role: 'assistant', content: `Network error: ${err instanceof Error ? err.message : 'unknown'}` }])
     }
     setLoading(false)
   }, [input, loading, messages, ctx])

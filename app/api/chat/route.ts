@@ -8,7 +8,7 @@ export async function POST(req: NextRequest) {
     const { messages, systemPrompt } = await req.json()
 
     const response = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-3-5-haiku-20241022',
       max_tokens: 1000,
       system: systemPrompt,
       messages,
@@ -16,7 +16,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(response)
   } catch (error) {
-    console.error('Anthropic API error:', error)
-    return NextResponse.json({ error: 'Failed to get AI response' }, { status: 500 })
+    const message = error instanceof Error ? error.message : String(error)
+    console.error('Anthropic API error:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
