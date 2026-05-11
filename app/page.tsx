@@ -827,8 +827,8 @@ export default function PitchPage() {
           <div className="ask-card reveal reveal-d2"><div className="ask-num">3</div><div className="ask-text">A decision on path forward within 60 days of pilot results</div></div>
         </div>
         <p className="ask-final reveal">&ldquo;The product is built. The data proves the need.<br/>The question is: who fills this gap first?&rdquo;</p>
-        <a href="mailto:chirag.mewara.18@gmail.com?subject=Multicommerce%20%E2%80%94%20Let%27s%20Talk&body=Hi%20Kapil%2C%20I%27ve%20reviewed%20the%20Multicommerce%20pitch%20and%20I%27m%20interested%20in%20exploring%20this%20further." className="ask-cta reveal">
-          Schedule 30 Minutes →
+        <a href="mailto:chirag.mewara.18@gmail.com?subject=Multicommerce%20%E2%80%94%20Partnership%20Conversation&body=Hi%20Chirag%2C%0A%0AI%20reviewed%20the%20Multicommerce%20pitch%20and%20would%20like%20to%20explore%20this%20further.%0A%0ABest%2C" className="ask-cta reveal">
+          Request a Conversation →
         </a>
       </div>
 

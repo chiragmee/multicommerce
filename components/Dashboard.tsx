@@ -739,13 +739,13 @@ STYLE RULES:
       })
       const d = await r.json()
       if (!r.ok) {
-        setMessages(p => [...p, { role: 'assistant', content: `API error: ${d.error ?? r.status}` }])
+        setMessages(p => [...p, { role: 'assistant', content: '## Analysis Unavailable\n\n- The AI engine encountered an issue. Please try your question again in a moment.' }])
       } else {
         const txt = d.content?.filter((b: {type:string;text:string}) => b.type==='text').map((b: {type:string;text:string}) => b.text).join('\n') || 'Unable to generate insight.'
         setMessages(p => [...p, { role: 'assistant', content: txt }])
       }
     } catch (err) {
-      setMessages(p => [...p, { role: 'assistant', content: `Network error: ${err instanceof Error ? err.message : 'unknown'}` }])
+      setMessages(p => [...p, { role: 'assistant', content: '## Analysis Unavailable\n\n- Unable to reach the AI engine. Please check your connection and try again.' }])
     }
     setLoading(false)
   }, [input, loading, messages, ctx])
@@ -1323,6 +1323,14 @@ export default function Dashboard() {
 
   return (
     <div style={{display:'flex',height:'100vh',width:'100%',background:T.bg,fontFamily:"'DM Sans','Helvetica Neue',system-ui,sans-serif",color:T.text}}>
+      {/* Mobile fallback */}
+      <style>{`@media(max-width:768px){.mc-mobile-wall{display:flex!important}}`}</style>
+      <div className="mc-mobile-wall" style={{display:'none',position:'fixed',inset:0,background:'#1E293B',zIndex:9999,flexDirection:'column',alignItems:'center',justifyContent:'center',padding:32,textAlign:'center'}}>
+        <div style={{fontSize:48,marginBottom:20}}>🖥️</div>
+        <div style={{fontSize:22,fontWeight:700,color:'#fff',fontFamily:'Georgia,serif',marginBottom:12,lineHeight:1.3}}>Best experienced on desktop</div>
+        <div style={{fontSize:14,color:'#94A3B8',lineHeight:1.7,maxWidth:300,marginBottom:28}}>The Multicommerce dashboard is built for desktop. Please open this link on a laptop or desktop for the full experience.</div>
+        <a href="/" style={{padding:'12px 28px',background:'#0891B2',color:'#fff',borderRadius:8,textDecoration:'none',fontSize:14,fontWeight:600}}>← View Pitch Page</a>
+      </div>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap'); @keyframes spin{to{transform:rotate(360deg)}} *{box-sizing:border-box;}`}</style>
 
       <div style={{width:220,flexShrink:0,background:T.white,borderRight:`1px solid ${T.border}`,display:'flex',flexDirection:'column',overflowY:'auto'}}>
