@@ -288,7 +288,30 @@ export default function PitchPage() {
 
   return (
     <>
-      <style>{CSS}</style>
+      <style>{CSS + `
+        @media (max-width: 768px) {
+          .mc-wall { display: flex !important; }
+          body { overflow: hidden; }
+        }
+      `}</style>
+
+      {/* Mobile wall */}
+      <div className="mc-wall" style={{display:'none',position:'fixed',inset:0,zIndex:9999,background:'#1E293B',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'40px 28px',textAlign:'center'}}>
+        <div style={{width:48,height:48,borderRadius:12,background:'#0891B2',display:'flex',alignItems:'center',justifyContent:'center',marginBottom:24}}>
+          <span style={{color:'#fff',fontWeight:800,fontSize:22,fontFamily:'Georgia,serif'}}>m</span>
+        </div>
+        <div style={{fontFamily:'Georgia,serif',fontSize:22,fontWeight:700,color:'#fff',marginBottom:12,lineHeight:1.3}}>
+          Best experienced on a laptop
+        </div>
+        <div style={{fontSize:14,color:'#94A3B8',lineHeight:1.7,marginBottom:32,maxWidth:300}}>
+          The Multicommerce pitch and prototype are designed for desktop. Please open this link on your laptop or computer for the full experience.
+        </div>
+        <div style={{background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:10,padding:'12px 20px',marginBottom:12,width:'100%',maxWidth:320}}>
+          <div style={{fontSize:10,color:'#64748B',fontWeight:600,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:6}}>Copy this link</div>
+          <div style={{fontSize:13,color:'#E2E8F0',fontFamily:'monospace',wordBreak:'break-all',lineHeight:1.5}}>multicommerce-pitch.vercel.app</div>
+        </div>
+        <div style={{fontSize:12,color:'#475569'}}>Open it on Chrome, Safari, or any desktop browser</div>
+      </div>
 
       {/* NAV */}
       <nav>
