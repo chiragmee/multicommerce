@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -616,8 +616,22 @@ Respond in 2-3 short paragraphs. Be specific with names and numbers. No bullet p
   )
 }
 
+function PhoneShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{width:200,background:'#fff',borderRadius:32,border:'8px solid #1E293B',overflow:'hidden',boxShadow:'0 24px 64px rgba(0,0,0,0.22)',display:'flex',flexDirection:'column',flexShrink:0}}>
+      <div style={{height:24,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 14px',flexShrink:0}}>
+        <span style={{color:'#fff',fontSize:8,fontWeight:700}}>9:41</span>
+        <div style={{width:36,height:5,background:'#374151',borderRadius:3}}/>
+        <span style={{color:'#94A3B8',fontSize:8}}>●●●</span>
+      </div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>{children}</div>
+    </div>
+  )
+}
+
 function MobileAppView() {
-  const [phoneTab, setPhoneTab] = useState<'log' | 'analytics'>('log')
+  const [activeScreen, setActiveScreen]         = useState(0)
+  const [firstLogSubmitted, setFirstLogSubmitted] = useState(false)
 
   const active       = APP_STATUS.filter(d => d.appStatus === 'active').length
   const inactive     = APP_STATUS.filter(d => d.appStatus === 'inactive').length
@@ -633,9 +647,11 @@ function MobileAppView() {
 
   return (
     <div style={{display:'flex',flexDirection:'column',gap:20}}>
+
+      {/* Header */}
       <div>
         <h1 style={{fontSize:20,fontWeight:700,color:T.navy,fontFamily:'Georgia,serif',margin:0}}>Distributor Mobile App</h1>
-        <p style={{fontSize:13,color:T.textLight,margin:'4px 0 0'}}>The data collection layer that powers sell-through intelligence — what feeds the engine</p>
+        <p style={{fontSize:13,color:T.textLight,margin:'4px 0 0'}}>Complete user journey — from invite to daily contributor to brand intelligence</p>
       </div>
 
       {/* KPI row */}
@@ -646,300 +662,418 @@ function MobileAppView() {
         <MetricCard label="Data Lag" value="< 4h" sub="avg time from log to dashboard" color={T.teal} icon={Clock}/>
       </div>
 
-      {/* Architecture diagram */}
+      {/* SECTION 1: JOURNEY MAP */}
       <Card>
-        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Data Pipeline — How Sell-Through Intelligence Is Built</div>
-        <div style={{fontSize:11,color:T.textLight,marginBottom:20}}>Two independent sources are cross-referenced to produce tamper-resistant sell-through ratios</div>
-
-        {/* Layer 1: Sources */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:6}}>
-          <div style={{background:T.tealLight,border:`1.5px solid ${T.teal}`,borderRadius:12,padding:16}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-              <div style={{width:28,height:28,background:T.teal,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                <Settings size={13} style={{color:'#fff'}}/>
-              </div>
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:T.tealDark}}>Unicommerce APIs</div>
-                <div style={{fontSize:9,fontWeight:700,color:T.teal,textTransform:'uppercase',letterSpacing:'0.06em'}}>Primary Data Layer</div>
-              </div>
-            </div>
-            {['Shipments & order data','Inventory snapshots','Returns & RTO data','Product catalogue'].map(item=>(
-              <div key={item} style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:T.text,marginBottom:4}}>
-                <span style={{width:4,height:4,borderRadius:'50%',background:T.teal,flexShrink:0,display:'inline-block'}}/>
-                {item}
-              </div>
-            ))}
-            <div style={{marginTop:10,padding:'5px 8px',background:'rgba(8,145,178,0.12)',borderRadius:6,fontSize:10,color:T.tealDark,fontWeight:600,display:'flex',alignItems:'center',gap:5}}>
-              <span style={{width:6,height:6,borderRadius:'50%',background:T.green,display:'inline-block'}}/>
-              Auto-sync every 6 hours · Connected
-            </div>
-          </div>
-
-          <div style={{background:T.amberLight,border:`1.5px solid ${T.amber}`,borderRadius:12,padding:16}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-              <div style={{width:28,height:28,background:T.amber,borderRadius:6,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
-                <Smartphone size={13} style={{color:'#fff'}}/>
-              </div>
-              <div>
-                <div style={{fontSize:12,fontWeight:700,color:T.amberText}}>Distributor Mobile App</div>
-                <div style={{fontSize:9,fontWeight:700,color:T.amber,textTransform:'uppercase',letterSpacing:'0.06em'}}>Secondary Data Layer</div>
-              </div>
-            </div>
-            {['Daily sell-through quantities','Retailer name & city','SKU-level sales logs','Offline-first sync capable'].map(item=>(
-              <div key={item} style={{display:'flex',alignItems:'center',gap:6,fontSize:11,color:T.text,marginBottom:4}}>
-                <span style={{width:4,height:4,borderRadius:'50%',background:T.amber,flexShrink:0,display:'inline-block'}}/>
-                {item}
-              </div>
-            ))}
-            <div style={{marginTop:10,padding:'5px 8px',background:'rgba(217,119,6,0.12)',borderRadius:6,fontSize:10,color:T.amberText,fontWeight:600,display:'flex',alignItems:'center',gap:5}}>
-              <span style={{width:6,height:6,borderRadius:'50%',background:T.amber,display:'inline-block'}}/>
-              Manual daily log · {active+inactive}/30 distributors onboarded
-            </div>
-          </div>
-        </div>
-
-        {/* Arrow down */}
-        <div style={{display:'flex',justifyContent:'center',flexDirection:'column',alignItems:'center',height:28,gap:0}}>
-          <div style={{width:2,height:16,background:T.border}}/>
-          <div style={{fontSize:16,color:T.textDim,lineHeight:1}}>↓</div>
-        </div>
-
-        {/* Layer 2: Engine */}
-        <div style={{background:T.navy,borderRadius:12,padding:'16px 20px',marginBottom:6}}>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12}}>
-            <div>
-              <div style={{fontSize:13,fontWeight:700,color:'#fff',marginBottom:2}}>Multicommerce Intelligence Engine</div>
-              <div style={{fontSize:10,color:T.textDim}}>Cross-references both sources · flags anomalies · computes ratios · generates AI alerts</div>
-            </div>
-            <div style={{padding:'3px 10px',background:'rgba(8,145,178,0.3)',borderRadius:20,fontSize:10,fontWeight:600,color:T.teal,flexShrink:0}}>Core</div>
-          </div>
-          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1fr',gap:8}}>
-            {[
-              {icon:'🔍',label:'Anomaly Validator',    desc:'Catches data gaming by cross-referencing primary vs secondary'},
-              {icon:'📊',label:'Sell-Through Calc',    desc:'Primary ÷ Secondary per distributor, SKU, and territory'},
-              {icon:'🤖',label:'AI Alert Generator',   desc:'Triggers specific actions when thresholds are crossed'},
-              {icon:'🔮',label:'Demand Forecaster',    desc:'Predicts sell-through trajectory from 6-month history'},
-            ].map(item=>(
-              <div key={item.label} style={{background:'rgba(255,255,255,0.05)',borderRadius:8,padding:'10px 12px'}}>
-                <div style={{fontSize:16,marginBottom:4}}>{item.icon}</div>
-                <div style={{fontSize:10,fontWeight:700,color:'#fff',marginBottom:3}}>{item.label}</div>
-                <div style={{fontSize:9,color:T.textDim,lineHeight:1.4}}>{item.desc}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Arrow down */}
-        <div style={{display:'flex',justifyContent:'center',flexDirection:'column',alignItems:'center',height:28}}>
-          <div style={{width:2,height:16,background:T.border}}/>
-          <div style={{fontSize:16,color:T.textDim,lineHeight:1}}>↓</div>
-        </div>
-
-        {/* Layer 3: Outputs */}
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Complete User Journey</div>
+        <div style={{fontSize:11,color:T.textLight,marginBottom:20}}>From first invite to daily contributor — under 5 minutes to onboard, 60 seconds every day after</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 28px 1fr 28px 1fr 28px 1fr 28px 1fr',alignItems:'start',gap:0}}>
           {[
-            {icon:'🖥️',label:'Brand Dashboard',        desc:'This platform — all 6 views live today',           tag:'Live',     tagColor:T.green},
-            {icon:'📲',label:'WhatsApp & Email Alerts', desc:'Push critical alerts outside the dashboard',       tag:'Planned',  tagColor:T.amber},
-            {icon:'🔗',label:'API & Webhooks',           desc:"Connect brand's internal BI and ERP tools",       tag:'Roadmap',  tagColor:T.textDim},
-          ].map(item=>(
-            <div key={item.label} style={{background:T.bg,border:`1px solid ${T.border}`,borderRadius:10,padding:'12px 14px'}}>
-              <div style={{fontSize:20,marginBottom:6}}>{item.icon}</div>
-              <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:4}}>
-                <div style={{fontSize:11,fontWeight:700,color:T.navy}}>{item.label}</div>
-                <span style={{fontSize:9,fontWeight:700,color:item.tagColor,padding:'1px 6px',borderRadius:99,background:item.tagColor+'22'}}>{item.tag}</span>
+            {icon:'📲',label:'Invite',     desc:'Brand sends a WhatsApp magic link or QR code. No app store. Pre-authenticated.'},
+            {icon:'🏁',label:'Onboard',    desc:'Distributor confirms their details and SKU catalogue. One-time setup, 5 minutes.'},
+            {icon:'📝',label:'Daily Log',  desc:'Every evening: SKU, units sold, retailer. 3 fields, 60 seconds, works offline.'},
+            {icon:'⚡',label:'Data Sync',  desc:'Multicommerce validates, cross-references Unicommerce, updates sell-through ratios.'},
+            {icon:'📊',label:'Get Back',   desc:'Distributor unlocks their own analytics — territory ranking, SKU tips, reorder signals.'},
+          ].map((stage,i,arr) => (
+            <React.Fragment key={stage.label}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center',gap:8}}>
+                <div style={{width:44,height:44,borderRadius:12,background:i<2?T.tealLight:i<4?T.bg:T.greenLight,border:`2px solid ${i<2?T.teal:i<4?T.border:T.green}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20}}>{stage.icon}</div>
+                <div style={{fontSize:12,fontWeight:700,color:i<2?T.teal:i<4?T.navy:T.green}}>{stage.label}</div>
+                <div style={{fontSize:10,color:T.textLight,lineHeight:1.5}}>{stage.desc}</div>
               </div>
-              <div style={{fontSize:10,color:T.textLight,lineHeight:1.4}}>{item.desc}</div>
+              {i < arr.length-1 && (
+                <div style={{display:'flex',alignItems:'flex-start',justifyContent:'center',paddingTop:14}}>
+                  <span style={{fontSize:16,color:T.border}}>→</span>
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </Card>
+
+      {/* SECTION 2: ONBOARDING CAROUSEL */}
+      <Card>
+        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Onboarding Flow — 5 Screens</div>
+        <div style={{fontSize:11,color:T.textLight,marginBottom:16}}>Click through the exact experience a distributor sees when they tap the invite link for the first time</div>
+
+        <div style={{display:'flex',gap:0,marginBottom:20,borderRadius:8,overflow:'hidden',border:`1px solid ${T.border}`}}>
+          {['Invite','Welcome','Your SKUs','How It Works','First Log'].map((label,i) => (
+            <button key={label} onClick={()=>{setActiveScreen(i); if(i!==4) setFirstLogSubmitted(false);}} style={{
+              flex:1,padding:'7px 4px',fontSize:10,fontWeight:activeScreen===i?700:400,
+              color:activeScreen===i?'#fff':T.textLight,
+              background:activeScreen===i?T.teal:T.white,
+              border:'none',borderRight:i<4?`1px solid ${T.border}`:'none',
+              cursor:'pointer',transition:'all 0.15s',
+            }}>{label}</button>
+          ))}
+        </div>
+
+        <div style={{display:'flex',gap:28,alignItems:'flex-start'}}>
+          <PhoneShell>
+            {activeScreen===0 && (
+              <>
+                <div style={{background:'#075E54',padding:'8px 12px',display:'flex',alignItems:'center',gap:8,flexShrink:0}}>
+                  <div style={{width:28,height:28,borderRadius:'50%',background:'#25D366',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,fontSize:13}}>🏷️</div>
+                  <div>
+                    <div style={{fontSize:10,fontWeight:700,color:'#fff'}}>Honasa Consumer</div>
+                    <div style={{fontSize:8,color:'rgba(255,255,255,0.65)'}}>Brand Partner · online</div>
+                  </div>
+                </div>
+                <div style={{flex:1,background:'#ECE5DD',padding:'10px 8px',display:'flex',flexDirection:'column',gap:8,overflowY:'auto'}}>
+                  <div style={{background:'#fff',borderRadius:'0 8px 8px 8px',padding:'10px 10px',maxWidth:'92%',boxShadow:'0 1px 2px rgba(0,0,0,0.08)'}}>
+                    <div style={{fontSize:8,color:'#075E54',fontWeight:700,marginBottom:4}}>Honasa Consumer 🏷️</div>
+                    <div style={{fontSize:8,color:'#303030',lineHeight:1.55,marginBottom:8}}>Hi! You&apos;ve been invited to Multicommerce to track your sell-through and unlock your own analytics dashboard.<br/><br/>No app download needed. Takes 5 minutes.</div>
+                    <div style={{background:T.teal,borderRadius:5,padding:'6px 10px',textAlign:'center'}}>
+                      <div style={{fontSize:8,fontWeight:700,color:'#fff'}}>Open Multicommerce →</div>
+                    </div>
+                    <div style={{fontSize:7,color:'#8696A0',marginTop:4,textAlign:'right'}}>9:41 AM ✓✓</div>
+                  </div>
+                  <div style={{background:'rgba(255,255,255,0.6)',borderRadius:5,padding:'5px 8px',fontSize:7,color:'#8696A0',textAlign:'center'}}>No app download · Opens in browser · Pre-authenticated</div>
+                </div>
+              </>
+            )}
+            {activeScreen===1 && (
+              <>
+                <div style={{background:T.teal,padding:'8px 12px',flexShrink:0}}>
+                  <div style={{fontSize:7,color:'rgba(255,255,255,0.65)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:1}}>multicommerce · step 1 of 3</div>
+                  <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>Welcome 👋</div>
+                </div>
+                <div style={{flex:1,padding:'10px 12px',display:'flex',flexDirection:'column',gap:8,background:'#fff',overflowY:'auto'}}>
+                  <div style={{padding:'5px 8px',background:T.greenLight,borderRadius:5,display:'flex',alignItems:'center',gap:5}}>
+                    <CheckCircle size={10} style={{color:T.green,flexShrink:0}}/>
+                    <span style={{fontSize:8,color:T.greenText,fontWeight:600}}>Invited by Honasa Consumer</span>
+                  </div>
+                  {[['Distributor','Sharma Distribution Co'],['City','Pune, Maharashtra'],['Territory','Pune West']].map(([label,val])=>(
+                    <div key={label}>
+                      <div style={{fontSize:7,color:T.textDim,marginBottom:2,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>{label}</div>
+                      <div style={{padding:'5px 8px',background:T.bg,border:`1px solid ${T.border}`,borderRadius:4,fontSize:9,color:T.navy}}>{val}</div>
+                    </div>
+                  ))}
+                  <div style={{fontSize:7,color:T.textLight,lineHeight:1.4}}>Pre-filled by Honasa Consumer. Tap to edit if anything is wrong.</div>
+                  <button style={{width:'100%',padding:'7px',background:T.teal,color:'#fff',border:'none',borderRadius:5,fontSize:9,fontWeight:700,cursor:'pointer',marginTop:'auto'}}>Confirm &amp; Continue →</button>
+                </div>
+              </>
+            )}
+            {activeScreen===2 && (
+              <>
+                <div style={{background:T.teal,padding:'8px 12px',flexShrink:0}}>
+                  <div style={{fontSize:7,color:'rgba(255,255,255,0.65)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:1}}>multicommerce · step 2 of 3</div>
+                  <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>Your Products</div>
+                </div>
+                <div style={{flex:1,padding:'10px 12px',display:'flex',flexDirection:'column',gap:6,background:'#fff',overflowY:'auto'}}>
+                  <div style={{fontSize:8,color:T.textLight,lineHeight:1.4,marginBottom:2}}>Honasa Consumer pre-loaded the products you carry. Uncheck any you don&apos;t stock.</div>
+                  {[{name:'Daily Glow SPF50',checked:true},{name:'Onion Hair Oil',checked:true},{name:'Vitamin C Face Wash',checked:true},{name:'Ubtan Face Wash',checked:true},{name:'Rosemary Hair Oil',checked:true},{name:'Niacinamide Serum',checked:false}].map(s=>(
+                    <div key={s.name} style={{display:'flex',alignItems:'center',gap:7,padding:'5px 8px',background:s.checked?T.tealLight:T.bg,borderRadius:5,border:`1px solid ${s.checked?T.teal:T.border}`}}>
+                      <div style={{width:13,height:13,borderRadius:3,background:s.checked?T.teal:'transparent',border:`1.5px solid ${s.checked?T.teal:T.border}`,flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                        {s.checked && <span style={{color:'#fff',fontSize:8,fontWeight:900,lineHeight:1}}>✓</span>}
+                      </div>
+                      <span style={{fontSize:9,color:s.checked?T.tealDark:T.textLight,fontWeight:s.checked?500:400}}>{s.name}</span>
+                    </div>
+                  ))}
+                  <button style={{width:'100%',padding:'7px',background:T.teal,color:'#fff',border:'none',borderRadius:5,fontSize:9,fontWeight:700,cursor:'pointer',marginTop:4}}>5 Products Confirmed →</button>
+                </div>
+              </>
+            )}
+            {activeScreen===3 && (
+              <>
+                <div style={{background:T.teal,padding:'8px 12px',flexShrink:0}}>
+                  <div style={{fontSize:7,color:'rgba(255,255,255,0.65)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:1}}>multicommerce · step 3 of 3</div>
+                  <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>How It Works</div>
+                </div>
+                <div style={{flex:1,padding:'10px 12px',display:'flex',flexDirection:'column',gap:8,background:'#fff',overflowY:'auto'}}>
+                  {[
+                    {icon:'🕕',title:'Every evening',   desc:'Log what you sold that day before you close up'},
+                    {icon:'📝',title:'3 fields only',   desc:'SKU · Units sold · Retailer name or city'},
+                    {icon:'⚡',title:'60 seconds',      desc:'Works offline — syncs when you have signal'},
+                  ].map(step=>(
+                    <div key={step.title} style={{display:'flex',gap:10,padding:'8px 10px',background:T.bg,borderRadius:7,alignItems:'flex-start'}}>
+                      <span style={{fontSize:18,flexShrink:0,lineHeight:1}}>{step.icon}</span>
+                      <div>
+                        <div style={{fontSize:9,fontWeight:700,color:T.navy,marginBottom:2}}>{step.title}</div>
+                        <div style={{fontSize:8,color:T.textLight,lineHeight:1.4}}>{step.desc}</div>
+                      </div>
+                    </div>
+                  ))}
+                  <div style={{padding:'8px 10px',background:T.amberLight,borderRadius:7,fontSize:8,color:T.amberText,fontWeight:600,lineHeight:1.4}}>🎁 In return you get your own analytics — no one else gives distributors this view</div>
+                  <button style={{width:'100%',padding:'7px',background:T.teal,color:'#fff',border:'none',borderRadius:5,fontSize:9,fontWeight:700,cursor:'pointer',marginTop:'auto'}}>Do My First Log →</button>
+                </div>
+              </>
+            )}
+            {activeScreen===4 && !firstLogSubmitted && (
+              <>
+                <div style={{background:T.teal,padding:'8px 12px',display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+                  <div>
+                    <div style={{fontSize:7,color:'rgba(255,255,255,0.65)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:1}}>multicommerce</div>
+                    <div style={{fontSize:12,fontWeight:700,color:'#fff'}}>First Log 🎉</div>
+                  </div>
+                  <div style={{padding:'2px 7px',background:'rgba(255,255,255,0.2)',borderRadius:99,fontSize:7,color:'#fff',fontWeight:600}}>Today</div>
+                </div>
+                <div style={{flex:1,padding:'10px 12px',display:'flex',flexDirection:'column',gap:7,background:'#fff',overflowY:'auto'}}>
+                  <div>
+                    <div style={{fontSize:7,color:T.textDim,marginBottom:2,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>SKU</div>
+                    <div style={{padding:'5px 8px',border:`1px solid ${T.border}`,borderRadius:4,fontSize:9,color:T.navy,background:T.bg}}>Daily Glow Sunscreen SPF50 ▾</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:7,color:T.textDim,marginBottom:2,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>Units Sold Today</div>
+                    <div style={{padding:'5px 8px',border:`1.5px solid ${T.teal}`,borderRadius:4,fontSize:11,color:T.navy,background:'#fff',fontWeight:700}}>148</div>
+                  </div>
+                  <div>
+                    <div style={{fontSize:7,color:T.textDim,marginBottom:2,fontWeight:600,textTransform:'uppercase',letterSpacing:'0.05em'}}>Retailer / City</div>
+                    <div style={{padding:'5px 8px',border:`1px solid ${T.border}`,borderRadius:4,fontSize:9,color:T.navy,background:T.bg}}>D-Mart, Malad West</div>
+                  </div>
+                  <div style={{fontSize:8,color:T.teal,fontWeight:600,cursor:'pointer'}}>+ Add another SKU</div>
+                  <button onClick={()=>setFirstLogSubmitted(true)} style={{width:'100%',padding:'8px',background:T.teal,color:'#fff',border:'none',borderRadius:5,fontSize:9,fontWeight:700,cursor:'pointer',marginTop:'auto'}}>Submit My First Log ✓</button>
+                  <div style={{fontSize:7,color:T.textDim,textAlign:'center',lineHeight:1.4}}>Your analytics unlock immediately after this</div>
+                </div>
+              </>
+            )}
+            {activeScreen===4 && firstLogSubmitted && (
+              <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:16,background:'#fff',gap:10,textAlign:'center'}}>
+                <div style={{fontSize:40,lineHeight:1}}>✅</div>
+                <div style={{fontSize:13,fontWeight:700,color:T.navy}}>Log Submitted!</div>
+                <div style={{fontSize:9,color:T.textLight,lineHeight:1.5}}>You&apos;re officially part of Honasa Consumer&apos;s distribution intelligence network.</div>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,width:'100%'}}>
+                  <div style={{background:T.greenLight,borderRadius:7,padding:'8px',textAlign:'center'}}>
+                    <div style={{fontSize:20,fontWeight:700,color:T.green,fontFamily:'Georgia,serif'}}>0.94</div>
+                    <div style={{fontSize:7,color:T.greenText,marginTop:1}}>Sell-Through</div>
+                  </div>
+                  <div style={{background:T.tealLight,borderRadius:7,padding:'8px',textAlign:'center'}}>
+                    <div style={{fontSize:20,fontWeight:700,color:T.teal,fontFamily:'Georgia,serif'}}>12d</div>
+                    <div style={{fontSize:7,color:T.tealDark,marginTop:1}}>Inventory</div>
+                  </div>
+                </div>
+                <div style={{padding:'7px 10px',background:T.greenLight,borderRadius:7,width:'100%'}}>
+                  <div style={{fontSize:8,fontWeight:700,color:T.greenText,marginBottom:2}}>🏆 Top Performer</div>
+                  <div style={{fontSize:7,color:T.greenText,lineHeight:1.4}}>Best sell-through in Maharashtra. Prioritised for SPF60 launch allocation.</div>
+                </div>
+                <button style={{width:'100%',padding:'7px',background:T.teal,color:'#fff',border:'none',borderRadius:5,fontSize:9,fontWeight:700,cursor:'pointer'}}>See My Analytics →</button>
+              </div>
+            )}
+          </PhoneShell>
+
+          <div style={{flex:1,display:'flex',flexDirection:'column',gap:12,paddingTop:4}}>
+            {activeScreen===0 && (<>
+              <div style={{fontSize:11,fontWeight:700,color:T.teal,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>Stage 1 — The Invite</div>
+              <div style={{fontSize:15,fontWeight:700,color:T.navy,marginBottom:10,lineHeight:1.3}}>A single WhatsApp message. No app store. No login screen.</div>
+              {[
+                {title:'Magic link, pre-authenticated',   desc:'The link is unique to each distributor and logs them in automatically — no username or password.'},
+                {title:'Works in the browser',            desc:'Opens as a Progressive Web App. Can be added to the home screen. No Play Store or App Store.'},
+                {title:'Brand controls the invite',       desc:'Brand manager generates and sends the invite from the web dashboard in one click.'},
+              ].map(item=>(<div key={item.title} style={{padding:'10px 12px',background:T.bg,borderRadius:8,borderLeft:`3px solid ${T.teal}`,marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:600,color:T.navy,marginBottom:3}}>{item.title}</div>
+                <div style={{fontSize:11,color:T.textLight,lineHeight:1.5}}>{item.desc}</div>
+              </div>))}
+            </>)}
+            {activeScreen===1 && (<>
+              <div style={{fontSize:11,fontWeight:700,color:T.teal,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>Stage 2a — Welcome</div>
+              <div style={{fontSize:15,fontWeight:700,color:T.navy,marginBottom:10,lineHeight:1.3}}>Details pre-filled. One tap to confirm. Zero data entry.</div>
+              {[
+                {title:'Pre-populated from brand records', desc:"Name, city, and territory pulled from Unicommerce's distributor data — the brand already has this."},
+                {title:'Editable if wrong',                desc:'Distributor can correct any field. Corrections flow back to the brand records automatically.'},
+                {title:'One-time only',                   desc:'This screen appears once. Subsequent logins go straight to the daily log — no re-onboarding.'},
+              ].map(item=>(<div key={item.title} style={{padding:'10px 12px',background:T.bg,borderRadius:8,borderLeft:`3px solid ${T.teal}`,marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:600,color:T.navy,marginBottom:3}}>{item.title}</div>
+                <div style={{fontSize:11,color:T.textLight,lineHeight:1.5}}>{item.desc}</div>
+              </div>))}
+            </>)}
+            {activeScreen===2 && (<>
+              <div style={{fontSize:11,fontWeight:700,color:T.teal,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>Stage 2b — SKU Catalogue</div>
+              <div style={{fontSize:15,fontWeight:700,color:T.navy,marginBottom:10,lineHeight:1.3}}>Products pre-loaded. Distributor confirms what they stock.</div>
+              {[
+                {title:'Pulled from brand catalogue',     desc:"Honasa's full product list is in Multicommerce. Only this distributor's territory SKUs are shown."},
+                {title:'Why this matters',                desc:'Confirming the catalogue upfront means the daily log only shows products this distributor actually sells — no irrelevant choices.'},
+                {title:'First data quality gate',         desc:"A distributor can't log units for a product they don't carry. Prevents bad data at source."},
+              ].map(item=>(<div key={item.title} style={{padding:'10px 12px',background:T.bg,borderRadius:8,borderLeft:`3px solid ${T.teal}`,marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:600,color:T.navy,marginBottom:3}}>{item.title}</div>
+                <div style={{fontSize:11,color:T.textLight,lineHeight:1.5}}>{item.desc}</div>
+              </div>))}
+            </>)}
+            {activeScreen===3 && (<>
+              <div style={{fontSize:11,fontWeight:700,color:T.teal,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>Stage 2c — Tutorial</div>
+              <div style={{fontSize:15,fontWeight:700,color:T.navy,marginBottom:10,lineHeight:1.3}}>Sets the habit before the first log. 60 seconds of reading.</div>
+              {[
+                {title:'Sets expectations clearly',       desc:'Distributors know exactly what to do before they do it. 3 fields. Every evening. Offline works.'},
+                {title:'Incentive is front and centre',   desc:'"In return, you get your own analytics." This drives adoption — not the brand mandate.'},
+                {title:'One-time screen',                 desc:'After the tutorial, this screen never appears again. Returning users go straight to the log.'},
+              ].map(item=>(<div key={item.title} style={{padding:'10px 12px',background:T.bg,borderRadius:8,borderLeft:`3px solid ${T.teal}`,marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:600,color:T.navy,marginBottom:3}}>{item.title}</div>
+                <div style={{fontSize:11,color:T.textLight,lineHeight:1.5}}>{item.desc}</div>
+              </div>))}
+            </>)}
+            {activeScreen===4 && (<>
+              <div style={{fontSize:11,fontWeight:700,color:firstLogSubmitted?T.green:T.teal,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:2}}>{firstLogSubmitted?'Onboarding Complete ✓':'Stage 3 — First Log'}</div>
+              <div style={{fontSize:15,fontWeight:700,color:T.navy,marginBottom:10,lineHeight:1.3}}>{firstLogSubmitted?'Analytics unlock immediately. Data appears in the brand dashboard within 5 seconds.':'Three fields. Tap Submit. Done.'}</div>
+              {(!firstLogSubmitted?[
+                {title:'SKU picker (not freetext)',       desc:'Dropdown shows only confirmed products. No typos, no bad SKU names — clean data from the start.'},
+                {title:'Units sold today',                desc:'One number. Combined with Unicommerce primary shipment data, this produces the sell-through ratio.'},
+                {title:'Retailer / city',                 desc:'Tells the brand which retailers are moving stock. Optional — even without it, the ratio is calculable.'},
+              ]:[
+                {title:'Analytics unlock immediately',    desc:'The first log creates the baseline. Sell-through ratio, inventory days, and ranking are calculated instantly.'},
+                {title:'Data in brand dashboard',         desc:"Within 5 seconds, this distributor's sell-through data is visible in Honasa Consumer's Multicommerce."},
+                {title:'Retention loop starts here',      desc:'The distributor now has a reason to return every day — their analytics only stay fresh if they keep logging.'},
+              ]).map(item=>(<div key={item.title} style={{padding:'10px 12px',background:firstLogSubmitted?T.greenLight:T.bg,borderRadius:8,borderLeft:`3px solid ${firstLogSubmitted?T.green:T.teal}`,marginBottom:8}}>
+                <div style={{fontSize:12,fontWeight:600,color:T.navy,marginBottom:3}}>{item.title}</div>
+                <div style={{fontSize:11,color:T.textLight,lineHeight:1.5}}>{item.desc}</div>
+              </div>))}
+            </>)}
+
+            <div style={{display:'flex',alignItems:'center',gap:12,marginTop:'auto',paddingTop:8}}>
+              <button onClick={()=>setActiveScreen(s=>Math.max(0,s-1))} disabled={activeScreen===0} style={{padding:'5px 16px',border:`1px solid ${T.border}`,borderRadius:6,background:T.white,color:activeScreen===0?T.textDim:T.navy,cursor:activeScreen===0?'default':'pointer',fontSize:12,fontWeight:500}}>← Prev</button>
+              <div style={{display:'flex',gap:5}}>
+                {[0,1,2,3,4].map(i=>(
+                  <div key={i} onClick={()=>setActiveScreen(i)} style={{width:i===activeScreen?18:6,height:6,borderRadius:3,background:i===activeScreen?T.teal:T.border,cursor:'pointer',transition:'all 0.2s'}}/>
+                ))}
+              </div>
+              <button onClick={()=>setActiveScreen(s=>Math.min(4,s+1))} disabled={activeScreen===4} style={{padding:'5px 16px',border:`1px solid ${T.border}`,borderRadius:6,background:activeScreen===4?T.white:T.teal,color:activeScreen===4?T.textDim:'#fff',cursor:activeScreen===4?'default':'pointer',fontSize:12,fontWeight:500}}>Next →</button>
+              <span style={{fontSize:11,color:T.textDim,marginLeft:4}}>{activeScreen+1} / 5</span>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* SECTION 3: DAILY USAGE LOOP */}
+      <Card>
+        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Daily Usage Loop — What Happens Every Day After Onboarding</div>
+        <div style={{fontSize:11,color:T.textLight,marginBottom:20}}>The recurring 60-second habit that keeps the intelligence engine running</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 24px 1fr 24px 1fr 24px 1fr 24px 1fr',gap:0,alignItems:'start',marginBottom:16}}>
+          {[
+            {icon:'📲',time:'6:00 PM',   label:'Reminder',       desc:"WhatsApp or push notification: \"Don't forget your daily log.\"",                color:T.amberLight, border:T.amber},
+            {icon:'👆',time:'6:01 PM',   label:'Open App',       desc:'Tap the link. Opens instantly — no login, already authenticated.',                color:T.bg,         border:T.border},
+            {icon:'✍️',time:'6:02 PM',   label:'Log Entries',    desc:'Select SKU, enter units, add retailer. Repeat for each product sold today.',     color:T.bg,         border:T.border},
+            {icon:'✅',time:'6:03 PM',   label:'Submit',         desc:'"Synced ✓" if online. "Saved — syncing later" if offline.',                      color:T.tealLight,  border:T.teal},
+            {icon:'🖥️',time:'< 30s',     label:'Dashboard Live', desc:"Brand's dashboard updates. Alert fires if any threshold crossed.",               color:T.greenLight, border:T.green},
+          ].map((step,i,arr)=>(
+            <React.Fragment key={step.label}>
+              <div style={{display:'flex',flexDirection:'column',alignItems:'center',textAlign:'center',padding:'0 2px'}}>
+                <div style={{width:44,height:44,borderRadius:12,background:step.color,border:`1.5px solid ${step.border}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,marginBottom:6}}>{step.icon}</div>
+                <div style={{fontSize:9,fontWeight:700,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.05em',marginBottom:2}}>{step.time}</div>
+                <div style={{fontSize:11,fontWeight:700,color:T.navy,marginBottom:4}}>{step.label}</div>
+                <div style={{fontSize:10,color:T.textLight,lineHeight:1.5}}>{step.desc}</div>
+              </div>
+              {i<arr.length-1 && <div style={{display:'flex',alignItems:'flex-start',justifyContent:'center',paddingTop:12}}><span style={{fontSize:14,color:T.border}}>→</span></div>}
+            </React.Fragment>
+          ))}
+        </div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+          <div style={{padding:'10px 14px',background:T.amberLight,borderRadius:8,borderLeft:`3px solid ${T.amber}`}}>
+            <div style={{fontSize:11,fontWeight:700,color:T.amberText,marginBottom:4}}>📡 Offline scenario</div>
+            <div style={{fontSize:11,color:T.amberText,lineHeight:1.5}}>No signal in the field? The log is saved locally. It syncs automatically next time the distributor has connectivity. The brand dashboard shows a "pending sync" indicator until the data arrives.</div>
+          </div>
+          <div style={{padding:'10px 14px',background:T.tealLight,borderRadius:8,borderLeft:`3px solid ${T.teal}`}}>
+            <div style={{fontSize:11,fontWeight:700,color:T.tealDark,marginBottom:4}}>🔁 Multi-SKU in one session</div>
+            <div style={{fontSize:11,color:T.tealDark,lineHeight:1.5}}>A distributor who sold 5 products taps "+ Add SKU" after each entry. All entries submit together. The app surfaces recently logged SKUs at the top to speed up repeat sessions.</div>
+          </div>
+        </div>
+      </Card>
+
+      {/* SECTION 4: DATA PIPELINE */}
+      <Card>
+        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Data Flow — Phone to Dashboard</div>
+        <div style={{fontSize:11,color:T.textLight,marginBottom:20}}>Exact path a sell-through log takes from submission to brand intelligence — with timing and validation at each step</div>
+        <div style={{display:'flex',gap:20}}>
+          <div style={{display:'flex',flexDirection:'column',gap:0,flex:1}}>
+            {[
+              {t:'t = 0s',   color:T.teal,  icon:'📝', title:'Entry submitted on phone',           desc:'Log record created: SKU ID, units, retailer, distributor ID, timestamp, GPS if available.'},
+              {t:'t = 0s',   color:T.amber, icon:'📡', title:'Online check',                       desc:'If connected → proceeds immediately. If offline → encrypted entry stored locally. Sync retried every 30 minutes automatically.'},
+              {t:'t = 0–4h', color:T.navy,  icon:'☁️', title:'API receives log',                   desc:'Multicommerce API ingests the entry. Assigns a unique log ID. Deduplication check runs — prevents double-submission.'},
+              {t:'t = +2s',  color:T.navy,  icon:'🔍', title:'Anomaly Validator runs',             desc:'Cross-references submitted quantity against Unicommerce primary data for this SKU and territory. Flags if secondary > primary (impossible — would mean selling stock never received).'},
+              {t:'t = +3s',  color:T.green, icon:'✅', title:'Clean data → sell-through updated', desc:"Validated entry updates distributor's sell-through ratio. Dashboard ratios, risk scores, and inventory day estimates recalculate."},
+              {t:'t = +3s',  color:T.amber, icon:'🚩', title:'Flagged data → held for review',    desc:"Anomalous entries quarantined — don't affect alerts or ratios until brand admin reviews. Distributor notified their log is under review."},
+              {t:'t = +5s',  color:T.teal,  icon:'🖥️', title:'Brand dashboard refreshes',         desc:'Overview, Distributors, and SKU Intelligence views update in real-time. No manual refresh needed.'},
+              {t:'t = +5s',  color:T.red,   icon:'🚨', title:'Alert fires if threshold crossed',  desc:'If this log pushes any distributor past a threshold (sell-through < 0.70 or inventory > 45 days), an alert is created and a notification dispatched.'},
+            ].map((step,i,arr)=>(
+              <div key={i} style={{display:'flex',gap:14}}>
+                <div style={{display:'flex',flexDirection:'column',alignItems:'center',width:20,flexShrink:0}}>
+                  <div style={{width:16,height:16,borderRadius:'50%',background:step.color,flexShrink:0,zIndex:1,marginTop:2}}/>
+                  {i<arr.length-1 && <div style={{width:2,flex:1,background:T.border,minHeight:20,marginTop:2}}/>}
+                </div>
+                <div style={{paddingBottom:14,flex:1}}>
+                  <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
+                    <span style={{fontSize:13}}>{step.icon}</span>
+                    <span style={{fontSize:11,fontWeight:700,color:T.navy}}>{step.title}</span>
+                    <span style={{fontSize:9,fontWeight:600,color:step.color,padding:'1px 7px',borderRadius:99,background:step.color+'18',flexShrink:0}}>{step.t}</span>
+                  </div>
+                  <div style={{fontSize:11,color:T.textLight,lineHeight:1.55,paddingLeft:21}}>{step.desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{width:210,flexShrink:0,display:'flex',flexDirection:'column',gap:10}}>
+            <div style={{padding:'12px 14px',background:T.navy,borderRadius:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:'#fff',marginBottom:6}}>Why the validator matters</div>
+              <div style={{fontSize:10,color:T.textDim,lineHeight:1.55}}>Without cross-referencing Unicommerce primary data, a distributor could log more units sold than were ever shipped — inflating their ratio and hiding a real crisis.<br/><br/>The validator makes the data tamper-resistant without the distributor needing to understand why.</div>
+            </div>
+            <div style={{padding:'12px 14px',background:T.amberLight,borderRadius:10}}>
+              <div style={{fontSize:11,fontWeight:700,color:T.amberText,marginBottom:6}}>Cold start (weeks 1–8)</div>
+              <div style={{fontSize:10,color:T.amberText,lineHeight:1.55}}>Data accumulates and baselines form. AI alerts activate from Week 9 once enough history exists to distinguish signal from noise. Brands see raw tracking immediately — alerts come later.</div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* SECTION 5: WHAT DISTRIBUTORS GET BACK */}
+      <Card>
+        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Why Distributors Keep Using It — The Retention Loop</div>
+        <div style={{fontSize:11,color:T.textLight,marginBottom:16}}>The app stays valuable only if distributors keep logging. These four things make sure they do.</div>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12}}>
+          {[
+            {icon:'📊',title:'Their Own Analytics',   color:T.tealLight,  border:T.teal,  text:T.tealDark,  desc:"Sell-through ratio, inventory days, territory ranking. Before Multicommerce, distributors had zero visibility into their performance relative to peers.",                                  example:'"You\'re #2 in Maharashtra this month — up from #7 in November."'},
+            {icon:'💡',title:'SKU-Level Tips',         color:T.amberLight, border:T.amber, text:T.amberText, desc:'Personalised recommendations based on their specific sell-through data. Not generic advice — calculated from actual numbers.',                                                             example:'"Onion Shampoo 600ml is moving slowly. Consider a 10% retailer push this week."'},
+            {icon:'🚀',title:'Launch Priority',        color:T.greenLight, border:T.green, text:T.greenText, desc:'High-compliance distributors (>80% log rate) get first allocation on new product launches. Direct financial incentive — new launches are high-margin opportunities.',                    example:'"You qualify for first-batch SPF60 allocation. 23 other distributors don\'t."'},
+            {icon:'📦',title:'Reorder Signal',         color:T.bg,         border:T.border,text:T.navy,      desc:'Based on daily sell-through velocity, the app predicts stock-out dates. Prevents running out of fast-moving products — the thing distributors hate most.',                               example:'"At current velocity, you\'ll stock out of Daily Glow SPF50 in ~6 days. Request a top-up."'},
+          ].map(card=>(
+            <div key={card.title} style={{background:card.color,border:`1.5px solid ${card.border}`,borderRadius:12,padding:16}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
+                <span style={{fontSize:22}}>{card.icon}</span>
+                <div style={{fontSize:13,fontWeight:700,color:T.navy}}>{card.title}</div>
+              </div>
+              <div style={{fontSize:11,color:T.textLight,lineHeight:1.55,marginBottom:10}}>{card.desc}</div>
+              <div style={{padding:'8px 10px',background:'rgba(255,255,255,0.55)',borderRadius:7,fontSize:10,color:card.text,fontStyle:'italic',lineHeight:1.5}}>{card.example}</div>
             </div>
           ))}
         </div>
       </Card>
 
-      {/* Adoption table + phone mockup */}
-      <div style={{display:'grid',gridTemplateColumns:'1fr 220px',gap:14,alignItems:'start'}}>
-
-        {/* Adoption table */}
-        <Card style={{padding:0,overflow:'hidden'}}>
-          <div style={{padding:'14px 20px 10px',borderBottom:`1px solid ${T.border}`}}>
-            <div style={{fontSize:13,fontWeight:600,color:T.navy}}>App Adoption by Distributor</div>
+      {/* Adoption tracker */}
+      <Card style={{padding:0,overflow:'hidden'}}>
+        <div style={{padding:'14px 20px 10px',borderBottom:`1px solid ${T.border}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:600,color:T.navy}}>Adoption Status by Distributor</div>
             <div style={{fontSize:11,color:T.textLight,marginTop:2}}>
-              <span style={{color:T.green,fontWeight:600}}>{active} active</span>
-              {' · '}
-              <span style={{color:T.amber,fontWeight:600}}>{inactive} inactive</span>
-              {' · '}
+              <span style={{color:T.green,fontWeight:600}}>{active} active</span>{' · '}
+              <span style={{color:T.amber,fontWeight:600}}>{inactive} inactive</span>{' · '}
               <span style={{color:T.red,fontWeight:600}}>{notInstalled} not installed</span>
             </div>
           </div>
-          <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 0.6fr 90px',padding:'8px 20px',background:T.bg,borderBottom:`1px solid ${T.border}`}}>
-            {['Distributor','Status','Last Log','Logs/7d','Compliance'].map(h=>(
-              <div key={h} style={{fontSize:10,fontWeight:600,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.05em'}}>{h}</div>
-            ))}
-          </div>
-          <div style={{maxHeight:380,overflowY:'auto'}}>
-            {APP_STATUS.map(d=>(
-              <div key={d.id} style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 0.6fr 90px',padding:'10px 20px',borderBottom:`1px solid ${T.border}`,alignItems:'center'}}>
-                <div>
-                  <div style={{fontSize:12,fontWeight:500,color:T.navy}}>{d.name}</div>
-                  <div style={{fontSize:10,color:T.textDim}}>{d.city}</div>
-                </div>
-                <div>
-                  <span style={{fontSize:10,fontWeight:600,padding:'2px 7px',borderRadius:99,background:statusBg(d.appStatus),color:statusColor(d.appStatus)}}>{statusLabel(d.appStatus)}</span>
-                </div>
-                <div style={{fontSize:11,color:d.appStatus==='not_installed'?T.textDim:d.lastLog==='Today'?T.green:T.text}}>{d.lastLog}</div>
-                <div style={{fontSize:12,fontWeight:600,color:T.navy,textAlign:'center'}}>{d.logsThisWeek}</div>
-                <div style={{display:'flex',alignItems:'center',gap:5}}>
-                  <div style={{flex:1,height:4,background:T.border,borderRadius:2}}>
-                    <div style={{height:4,width:`${d.compliance}%`,background:d.compliance>=80?T.green:d.compliance>=50?T.amber:T.red,borderRadius:2}}/>
-                  </div>
-                  <span style={{fontSize:10,color:T.textDim,minWidth:24,textAlign:'right'}}>{d.compliance}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Phone mockup */}
-        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
-          <div style={{fontSize:10,fontWeight:700,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.08em'}}>Distributor View</div>
-          <div style={{
-            width:180,background:'#fff',borderRadius:28,
-            border:'8px solid #1E293B',overflow:'hidden',
-            boxShadow:'0 20px 48px rgba(0,0,0,0.18)',
-          }}>
-            {/* Status bar */}
-            <div style={{height:24,background:'#1E293B',display:'flex',alignItems:'center',justifyContent:'space-between',padding:'0 12px'}}>
-              <span style={{color:'#fff',fontSize:8,fontWeight:600}}>9:41</span>
-              <div style={{width:32,height:5,background:'#374151',borderRadius:3}}/>
-              <span style={{color:'#94A3B8',fontSize:8}}>●●●</span>
-            </div>
-            {/* App header */}
-            <div style={{background:T.teal,padding:'8px 12px'}}>
-              <div style={{fontSize:7,color:'rgba(255,255,255,0.65)',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.08em',marginBottom:1}}>multicommerce</div>
-              <div style={{fontSize:11,fontWeight:700,color:'#fff'}}>Joshi Marketing Agency</div>
-              <div style={{fontSize:8,color:'rgba(255,255,255,0.75)'}}>Mumbai, Maharashtra</div>
-            </div>
-            {/* Tabs */}
-            <div style={{display:'flex',borderBottom:`1px solid ${T.border}`,background:T.white}}>
-              {(['log','analytics'] as const).map(tab=>(
-                <button key={tab} onClick={()=>setPhoneTab(tab)} style={{
-                  flex:1,padding:'5px 0',fontSize:8,fontWeight:phoneTab===tab?700:400,
-                  color:phoneTab===tab?T.teal:T.textLight,border:'none',background:'transparent',
-                  cursor:'pointer',borderBottom:`2px solid ${phoneTab===tab?T.teal:'transparent'}`,
-                  transition:'all 0.15s',
-                }}>
-                  {tab==='log'?'Log Today':'My Analytics'}
-                </button>
-              ))}
-            </div>
-            {/* Content */}
-            {phoneTab==='log' ? (
-              <div style={{padding:'10px 12px',display:'flex',flexDirection:'column',gap:7,background:T.white}}>
-                <div style={{fontSize:7,fontWeight:700,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.07em'}}>Today&apos;s Sell-Through Log</div>
-                <div>
-                  <div style={{fontSize:7,color:T.textDim,marginBottom:2}}>SKU</div>
-                  <div style={{padding:'4px 8px',border:`1px solid ${T.border}`,borderRadius:4,fontSize:8,color:T.navy,background:T.bg}}>Daily Glow Sunscreen SPF50</div>
-                </div>
-                <div>
-                  <div style={{fontSize:7,color:T.textDim,marginBottom:2}}>Units Sold Today</div>
-                  <div style={{padding:'4px 8px',border:`1.5px solid ${T.teal}`,borderRadius:4,fontSize:10,color:T.navy,background:'#fff',fontWeight:700}}>148</div>
-                </div>
-                <div>
-                  <div style={{fontSize:7,color:T.textDim,marginBottom:2}}>Retailer / City</div>
-                  <div style={{padding:'4px 8px',border:`1px solid ${T.border}`,borderRadius:4,fontSize:8,color:T.navy,background:T.bg}}>D-Mart, Malad West</div>
-                </div>
-                <button style={{width:'100%',padding:'7px',background:T.teal,color:'#fff',border:'none',borderRadius:5,fontSize:9,fontWeight:700,cursor:'pointer',marginTop:2}}>Submit Log</button>
-                <div style={{fontSize:7,color:T.textDim,textAlign:'center',lineHeight:1.4}}>Helps Honasa optimize shipments to your territory</div>
-              </div>
-            ) : (
-              <div style={{padding:'10px 12px',display:'flex',flexDirection:'column',gap:7,background:T.white}}>
-                <div style={{fontSize:7,fontWeight:700,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.07em'}}>Your Performance</div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:5}}>
-                  <div style={{background:T.greenLight,borderRadius:6,padding:'7px',textAlign:'center'}}>
-                    <div style={{fontSize:16,fontWeight:700,color:T.green,fontFamily:'Georgia,serif'}}>0.94</div>
-                    <div style={{fontSize:7,color:T.greenText,marginTop:1}}>Sell-Through</div>
-                  </div>
-                  <div style={{background:T.tealLight,borderRadius:6,padding:'7px',textAlign:'center'}}>
-                    <div style={{fontSize:16,fontWeight:700,color:T.teal,fontFamily:'Georgia,serif'}}>12d</div>
-                    <div style={{fontSize:7,color:T.tealDark,marginTop:1}}>Inventory</div>
-                  </div>
-                </div>
-                <div style={{background:T.greenLight,borderRadius:6,padding:'7px'}}>
-                  <div style={{fontSize:8,fontWeight:700,color:T.greenText,marginBottom:2}}>🏆 Top Performer</div>
-                  <div style={{fontSize:7,color:T.greenText,lineHeight:1.4}}>Best sell-through in Maharashtra. Prioritized for SPF60 launch allocation.</div>
-                </div>
-                {[['Daily Glow SPF50',92],['Vitamin C Serum',88],['Rice Water',81]].map(([name,pct])=>(
-                  <div key={name}>
-                    <div style={{display:'flex',justifyContent:'space-between',fontSize:7,color:T.text,marginBottom:1}}>
-                      <span>{name}</span><span style={{fontWeight:600}}>{pct}%</span>
-                    </div>
-                    <div style={{height:3,background:T.border,borderRadius:2}}>
-                      <div style={{height:3,width:`${pct}%`,background:T.teal,borderRadius:2}}/>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          <div style={{fontSize:10,color:T.textDim,textAlign:'center',maxWidth:180,lineHeight:1.5}}>
-            Distributors unlock their own analytics by submitting daily logs — this is the adoption incentive
-          </div>
+          <button style={{padding:'5px 14px',background:T.amber,color:'#fff',border:'none',borderRadius:6,fontSize:11,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',gap:5}}>
+            <MessageCircle size={11}/> Nudge Inactive
+          </button>
         </div>
-      </div>
-
-      {/* Onboarding panel */}
-      <Card>
-        <div style={{fontSize:13,fontWeight:600,color:T.navy,marginBottom:2}}>Distributor Onboarding</div>
-        <div style={{fontSize:11,color:T.textLight,marginBottom:16}}>Get a distributor live in 3 steps — average time to first log: 3 days after invite</div>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:14}}>
-
-          <div style={{background:T.bg,borderRadius:10,padding:16}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-              <div style={{width:24,height:24,borderRadius:'50%',background:T.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}}>1</div>
-              <div style={{fontSize:12,fontWeight:700,color:T.navy}}>Send Invite</div>
-            </div>
-            <div style={{fontSize:11,color:T.textLight,lineHeight:1.6,marginBottom:10}}>Each distributor gets a unique QR code or WhatsApp link. Pre-authenticated — no separate login needed.</div>
-            <div style={{display:'flex',gap:6}}>
-              <button style={{flex:1,padding:'5px 0',background:T.navy,color:'#fff',border:'none',borderRadius:6,fontSize:10,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
-                <Download size={10}/> QR Code
-              </button>
-              <button style={{flex:1,padding:'5px 0',background:'#25D366',color:'#fff',border:'none',borderRadius:6,fontSize:10,fontWeight:600,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
-                <MessageCircle size={10}/> WhatsApp
-              </button>
-            </div>
-          </div>
-
-          <div style={{background:T.bg,borderRadius:10,padding:16}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-              <div style={{width:24,height:24,borderRadius:'50%',background:T.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}}>2</div>
-              <div style={{fontSize:12,fontWeight:700,color:T.navy}}>First Log</div>
-            </div>
-            <div style={{fontSize:11,color:T.textLight,lineHeight:1.6,marginBottom:10}}>Distributor submits their first sell-through entry. 3 fields, under 60 seconds. They immediately unlock their own analytics dashboard.</div>
-            <div style={{padding:'6px 10px',background:T.tealLight,borderRadius:6,fontSize:10,color:T.tealDark,fontWeight:600,display:'flex',alignItems:'center',gap:5}}>
-              <CheckCircle size={11} style={{color:T.teal,flexShrink:0}}/>
-              Works offline — syncs when connected
-            </div>
-          </div>
-
-          <div style={{background:T.bg,borderRadius:10,padding:16}}>
-            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
-              <div style={{width:24,height:24,borderRadius:'50%',background:T.teal,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'#fff',flexShrink:0}}>3</div>
-              <div style={{fontSize:12,fontWeight:700,color:T.navy}}>Daily Compliance</div>
-            </div>
-            <div style={{fontSize:11,color:T.textLight,lineHeight:1.6,marginBottom:10}}>Automated reminders for distributors who haven&apos;t logged in 2+ days. Brands can pause POs for persistently non-compliant distributors.</div>
-            <div style={{display:'flex',flexDirection:'column',gap:4}}>
-              {APP_STATUS.filter(d=>d.appStatus==='active'&&d.daysAgo>1).slice(0,2).map(d=>(
-                <div key={d.id} style={{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'4px 8px',background:T.amberLight,borderRadius:5}}>
-                  <span style={{fontSize:10,color:T.amberText,fontWeight:500}}>{d.name.split(' ').slice(0,2).join(' ')}</span>
-                  <span style={{fontSize:9,color:T.amber,fontWeight:600}}>{d.lastLog}</span>
+        <div style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 0.6fr 90px',padding:'8px 20px',background:T.bg,borderBottom:`1px solid ${T.border}`}}>
+          {['Distributor','Status','Last Log','Logs/7d','Compliance'].map(h=>(
+            <div key={h} style={{fontSize:10,fontWeight:600,color:T.textDim,textTransform:'uppercase',letterSpacing:'0.05em'}}>{h}</div>
+          ))}
+        </div>
+        <div style={{maxHeight:280,overflowY:'auto'}}>
+          {APP_STATUS.map(d=>(
+            <div key={d.id} style={{display:'grid',gridTemplateColumns:'2fr 1fr 1fr 0.6fr 90px',padding:'9px 20px',borderBottom:`1px solid ${T.border}`,alignItems:'center'}}>
+              <div>
+                <div style={{fontSize:12,fontWeight:500,color:T.navy}}>{d.name}</div>
+                <div style={{fontSize:10,color:T.textDim}}>{d.city}</div>
+              </div>
+              <div><span style={{fontSize:10,fontWeight:600,padding:'2px 7px',borderRadius:99,background:statusBg(d.appStatus),color:statusColor(d.appStatus)}}>{statusLabel(d.appStatus)}</span></div>
+              <div style={{fontSize:11,color:d.appStatus==='not_installed'?T.textDim:d.lastLog==='Today'?T.green:T.text}}>{d.lastLog}</div>
+              <div style={{fontSize:12,fontWeight:600,color:T.navy,textAlign:'center'}}>{d.logsThisWeek}</div>
+              <div style={{display:'flex',alignItems:'center',gap:5}}>
+                <div style={{flex:1,height:4,background:T.border,borderRadius:2}}>
+                  <div style={{height:4,width:`${d.compliance}%`,background:d.compliance>=80?T.green:d.compliance>=50?T.amber:T.red,borderRadius:2}}/>
                 </div>
-              ))}
-              <button style={{width:'100%',padding:'5px',background:T.amber,color:'#fff',border:'none',borderRadius:5,fontSize:10,fontWeight:700,cursor:'pointer',marginTop:2,display:'flex',alignItems:'center',justifyContent:'center',gap:5}}>
-                <MessageCircle size={11}/> Nudge All Inactive
-              </button>
+                <span style={{fontSize:10,color:T.textDim,minWidth:24,textAlign:'right'}}>{d.compliance}%</span>
+              </div>
             </div>
-          </div>
-
+          ))}
         </div>
       </Card>
+
     </div>
   )
 }
